@@ -1,0 +1,3256 @@
+<!--
+  index.html — SITE COMPLETO (arquivo único)
+  Projeto: Estudantes de Atitude CEMO 2026 — Colégio Estadual Mansões Odisseia (CEMO)
+
+  Regras atendidas:
+  - HTML + CSS (style) + JS (script) tudo neste arquivo
+  - Sem frameworks externos
+  - Responsivo (mobile-first)
+  - Visual espacial / sistema solar, glassmorphism, animações
+  - localStorage simulando banco de dados
+  - Senhas NÃO aparecem em texto puro no código (admin verificado por hash; alunos por hash)
+-->
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <meta name="theme-color" content="#0a0f2a" />
+  <title>Estudantes de Atitude — CEMO 2026</title>
+
+  <style>
+    :root{
+      --bg1:#07091f;
+      --bg2:#0b0f2f;
+      --bg3:#1a0b2e;
+
+      --glass: rgba(255,255,255,.08);
+      --glass2: rgba(255,255,255,.12);
+      --stroke: rgba(255,255,255,.14);
+      --stroke2: rgba(255,255,255,.22);
+
+      --txt: rgba(255,255,255,.92);
+      --muted: rgba(255,255,255,.72);
+      --faint: rgba(255,255,255,.52);
+
+      --shadow: 0 18px 48px rgba(0,0,0,.45);
+
+      --accentA: #6c5ce7;   /* roxo */
+      --accentB: #00d2ff;   /* ciano */
+      --accentC: #ff4fd8;   /* rosa */
+      --accentD: #ffb86b;   /* laranja */
+
+      --ok: #35d07f;
+      --warn: #ffcc66;
+      --bad: #ff5b5b;
+
+      --radius: 18px;
+      --radius2: 26px;
+
+      --maxw: 1180px;
+      --headerH: 74px;
+
+      --font: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, "Apple Color Emoji", "Segoe UI Emoji";
+    }
+
+    *{ box-sizing: border-box; }
+    html, body{ height:100%; }
+    body{
+      margin:0;
+      color:var(--txt);
+      font-family:var(--font);
+      background:
+        radial-gradient(1200px 700px at 18% 12%, rgba(108,92,231,.25), transparent 60%),
+        radial-gradient(900px 600px at 85% 18%, rgba(0,210,255,.18), transparent 60%),
+        radial-gradient(900px 600px at 35% 85%, rgba(255,79,216,.12), transparent 60%),
+        linear-gradient(135deg, var(--bg1), var(--bg2) 55%, var(--bg3));
+      overflow-x:hidden;
+    }
+
+    /* Canvas de estrelas */
+    #stars{
+      position:fixed;
+      inset:0;
+      width:100%;
+      height:100%;
+      z-index:-3;
+    }
+
+    /* Neblina / glow sutil */
+    .atmo{
+      position:fixed;
+      inset:-40px;
+      pointer-events:none;
+      z-index:-2;
+      background:
+        radial-gradient(800px 450px at 20% 20%, rgba(0,210,255,.08), transparent 60%),
+        radial-gradient(900px 520px at 80% 28%, rgba(255,79,216,.07), transparent 62%),
+        radial-gradient(900px 520px at 30% 80%, rgba(108,92,231,.09), transparent 62%);
+      filter: blur(2px);
+      opacity:.95;
+    }
+
+    /* Planetas (decorativos) */
+    .planet{
+      position:fixed;
+      border-radius:999px;
+      z-index:-1;
+      pointer-events:none;
+      filter: drop-shadow(0 18px 40px rgba(0,0,0,.55));
+      opacity:.9;
+    }
+    .planet.p1{
+      width:220px; height:220px;
+      left:-70px; top:120px;
+      background:
+        radial-gradient(circle at 30% 30%, rgba(255,255,255,.28), transparent 50%),
+        radial-gradient(circle at 70% 70%, rgba(0,0,0,.22), transparent 55%),
+        linear-gradient(135deg, rgba(0,210,255,.55), rgba(108,92,231,.55));
+    }
+    .planet.p1::after{
+      content:"";
+      position:absolute;
+      inset:25px;
+      border-radius:inherit;
+      background:
+        radial-gradient(circle at 60% 40%, rgba(255,255,255,.12), transparent 45%),
+        radial-gradient(circle at 35% 75%, rgba(0,0,0,.18), transparent 55%);
+      mix-blend-mode: overlay;
+    }
+    .planet.p2{
+      width:160px; height:160px;
+      right:-60px; top:88px;
+      background:
+        radial-gradient(circle at 35% 35%, rgba(255,255,255,.22), transparent 48%),
+        linear-gradient(135deg, rgba(255,79,216,.62), rgba(255,184,107,.55));
+      transform: rotate(18deg);
+    }
+    .planet.p3{
+      width:140px; height:140px;
+      right:40px; bottom:110px;
+      background:
+        radial-gradient(circle at 30% 30%, rgba(255,255,255,.18), transparent 55%),
+        linear-gradient(135deg, rgba(0,210,255,.35), rgba(53,208,127,.35));
+      opacity:.65;
+    }
+    .ring{
+      position:absolute;
+      left:50%; top:50%;
+      width:220px; height:80px;
+      transform: translate(-50%,-50%) rotate(-18deg);
+      border-radius:999px;
+      border:2px solid rgba(255,255,255,.16);
+      box-shadow: 0 0 0 1px rgba(0,0,0,.12) inset;
+      opacity:.9;
+    }
+    .planet.p2 .ring{ width:240px; height:86px; border-color: rgba(255,255,255,.18); }
+
+    /* Elementos flutuantes: foguete e astronauta (SVG inline) */
+    .floaty{
+      position:fixed;
+      z-index:-1;
+      pointer-events:none;
+      opacity:.9;
+      filter: drop-shadow(0 18px 38px rgba(0,0,0,.55));
+      animation: drift 10s ease-in-out infinite;
+    }
+    .floaty.rocket{
+      width:110px;
+      left:24px;
+      bottom:40px;
+      transform: rotate(-12deg);
+      animation-duration: 12s;
+    }
+    .floaty.astronaut{
+      width:120px;
+      right:20px;
+      bottom:22px;
+      transform: rotate(8deg);
+      animation-duration: 14s;
+    }
+    @keyframes drift{
+      0%,100%{ transform: translateY(0) translateX(0) rotate(var(--rot,0deg)); }
+      50%{ transform: translateY(-18px) translateX(10px) rotate(calc(var(--rot,0deg) + 2deg)); }
+    }
+
+    /* Layout base */
+    .wrap{
+      min-height:100%;
+      display:flex;
+      flex-direction:column;
+    }
+    header{
+      height:var(--headerH);
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      position:sticky;
+      top:0;
+      z-index:10;
+      backdrop-filter: blur(12px);
+      background: linear-gradient(180deg, rgba(10,12,36,.72), rgba(10,12,36,.35));
+      border-bottom: 1px solid rgba(255,255,255,.08);
+    }
+    .header-inner{
+      width:min(var(--maxw), calc(100% - 24px));
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:12px;
+    }
+    .brand{
+      display:flex;
+      align-items:center;
+      gap:10px;
+      min-width: 0;
+    }
+    .logo{
+      width:44px; height:44px;
+      border-radius:14px;
+      background:
+        radial-gradient(circle at 30% 30%, rgba(255,255,255,.24), transparent 60%),
+        linear-gradient(135deg, rgba(0,210,255,.55), rgba(108,92,231,.55));
+      border: 1px solid rgba(255,255,255,.18);
+      box-shadow: var(--shadow);
+      display:grid;
+      place-items:center;
+      overflow:hidden;
+    }
+    .logo img{
+      width:100%; height:100%;
+      object-fit:cover;
+      display:none;
+    }
+    .brand h1{
+      font-size:14px;
+      margin:0;
+      letter-spacing:.3px;
+      line-height:1.05;
+      color: rgba(255,255,255,.95);
+      white-space:nowrap;
+      overflow:hidden;
+      text-overflow:ellipsis;
+      max-width: 48vw;
+    }
+    .brand p{
+      margin:0;
+      font-size:12px;
+      color: var(--muted);
+      white-space:nowrap;
+      overflow:hidden;
+      text-overflow:ellipsis;
+      max-width: 52vw;
+    }
+    .menu-btn{
+      border:0;
+      background: transparent;
+      color: var(--txt);
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      width:46px; height:46px;
+      border-radius: 16px;
+      cursor:pointer;
+      transition: transform .18s ease, background .18s ease;
+    }
+    .menu-btn:hover{ background: rgba(255,255,255,.08); transform: translateY(-1px); }
+    .menu-btn:active{ transform: translateY(0); }
+    .menu-icon{
+      width:22px; height:22px;
+      display:block;
+    }
+
+    main{
+      width:min(var(--maxw), calc(100% - 24px));
+      margin: 22px auto 26px;
+      flex:1;
+    }
+
+    /* Cartões glass */
+    .card{
+      background: linear-gradient(180deg, var(--glass), rgba(255,255,255,.05));
+      border:1px solid var(--stroke);
+      border-radius: var(--radius2);
+      box-shadow: var(--shadow);
+      backdrop-filter: blur(16px);
+    }
+    .card.pad{ padding:18px; }
+    .hero{
+      padding: 20px 18px;
+      position:relative;
+      overflow:hidden;
+    }
+    .hero::before{
+      content:"";
+      position:absolute;
+      inset:-2px;
+      background:
+        radial-gradient(500px 240px at 20% 30%, rgba(0,210,255,.12), transparent 60%),
+        radial-gradient(520px 260px at 80% 30%, rgba(255,79,216,.10), transparent 62%),
+        radial-gradient(520px 260px at 40% 95%, rgba(108,92,231,.10), transparent 62%);
+      opacity:.9;
+      pointer-events:none;
+    }
+    .hero > *{ position:relative; z-index:1; }
+
+    .hero-grid{
+      display:grid;
+      grid-template-columns: 1fr;
+      gap:16px;
+      align-items:center;
+    }
+    @media (min-width: 860px){
+      .hero-grid{
+        grid-template-columns: 1.2fr .8fr;
+        gap: 22px;
+      }
+      .brand h1{ max-width: 520px; }
+      .brand p{ max-width: 560px; }
+    }
+
+    .title{
+      font-size: 28px;
+      line-height:1.1;
+      margin:0 0 8px 0;
+      letter-spacing:.2px;
+      text-wrap: balance;
+    }
+    @media (min-width: 860px){
+      .title{ font-size: 38px; }
+    }
+    .subtitle{
+      margin:0 0 16px 0;
+      color: var(--muted);
+      line-height:1.5;
+      font-size: 14px;
+    }
+
+    .cta-row{
+      display:flex;
+      gap:12px;
+      flex-wrap: wrap;
+      align-items:center;
+    }
+
+    .btn{
+      border:0;
+      cursor:pointer;
+      border-radius: 18px;
+      padding: 14px 16px;
+      font-weight: 700;
+      color: rgba(255,255,255,.95);
+      letter-spacing:.2px;
+      transition: transform .18s ease, filter .18s ease, box-shadow .18s ease;
+      display:inline-flex;
+      align-items:center;
+      gap:10px;
+      user-select:none;
+      box-shadow: 0 12px 28px rgba(0,0,0,.32);
+    }
+    .btn:hover{ transform: translateY(-1px); filter: brightness(1.05); }
+    .btn:active{ transform: translateY(0); filter: brightness(.98); }
+
+    .btn.big{
+      padding: 16px 18px;
+      border-radius: 22px;
+      font-size: 15px;
+    }
+
+    .btn.primary{
+      background: linear-gradient(135deg, rgba(108,92,231,.95), rgba(0,210,255,.92));
+      border: 1px solid rgba(255,255,255,.14);
+    }
+    .btn.pink{
+      background: linear-gradient(135deg, rgba(255,79,216,.92), rgba(255,184,107,.92));
+      border: 1px solid rgba(255,255,255,.14);
+    }
+    .btn.green{
+      background: linear-gradient(135deg, rgba(53,208,127,.92), rgba(0,210,255,.72));
+      border: 1px solid rgba(255,255,255,.14);
+    }
+    .btn.gray{
+      background: linear-gradient(135deg, rgba(255,255,255,.12), rgba(255,255,255,.06));
+      border: 1px solid rgba(255,255,255,.14);
+      color: rgba(255,255,255,.9);
+      box-shadow:none;
+    }
+    .btn:disabled{
+      opacity:.45;
+      cursor:not-allowed;
+      filter: grayscale(.1);
+      transform:none !important;
+    }
+
+    .badge{
+      display:inline-flex;
+      align-items:center;
+      gap:8px;
+      padding: 8px 10px;
+      border-radius: 999px;
+      border:1px solid rgba(255,255,255,.14);
+      background: rgba(255,255,255,.06);
+      color: rgba(255,255,255,.85);
+      font-weight: 650;
+      font-size: 12px;
+    }
+    .badge.ok{
+      border-color: rgba(53,208,127,.38);
+      background: rgba(53,208,127,.12);
+      color: rgba(195,255,222,.95);
+    }
+    .badge.warn{
+      border-color: rgba(255,204,102,.38);
+      background: rgba(255,204,102,.12);
+      color: rgba(255,238,200,.95);
+    }
+    .badge.bad{
+      border-color: rgba(255,91,91,.40);
+      background: rgba(255,91,91,.12);
+      color: rgba(255,210,210,.95);
+    }
+
+    /* Seções (SPA) */
+    .section{ display:none; }
+    .section.active{ display:block; }
+
+    /* Formulários */
+    .grid{
+      display:grid;
+      gap: 12px;
+    }
+    @media (min-width: 860px){
+      .grid.cols2{ grid-template-columns: 1fr 1fr; }
+      .grid.cols3{ grid-template-columns: 1fr 1fr 1fr; }
+    }
+    label{
+      display:block;
+      font-size: 12px;
+      color: var(--muted);
+      margin: 0 0 6px 2px;
+    }
+    .field{
+      width:100%;
+      padding: 13px 12px;
+      border-radius: 16px;
+      border: 1px solid rgba(255,255,255,.16);
+      background: rgba(10,12,36,.38);
+      color: rgba(255,255,255,.92);
+      outline:none;
+      transition: border-color .18s ease, transform .18s ease, background .18s ease;
+    }
+    .field:focus{
+      border-color: rgba(0,210,255,.42);
+      background: rgba(10,12,36,.52);
+    }
+    .help{
+      margin: 6px 0 0 2px;
+      font-size: 12px;
+      color: var(--faint);
+      line-height:1.4;
+    }
+    .hr{
+      height:1px;
+      background: rgba(255,255,255,.10);
+      margin: 14px 0;
+      border:0;
+    }
+
+    /* Modal (menu principal + modais do sistema) */
+    .overlay{
+      position:fixed;
+      inset:0;
+      background: rgba(0,0,0,.58);
+      display:none;
+      align-items:flex-end;
+      justify-content:center;
+      padding: 18px;
+      z-index:50;
+    }
+    .overlay.show{ display:flex; }
+    .modal{
+      width:min(720px, 100%);
+      border-radius: 28px;
+      border:1px solid rgba(255,255,255,.18);
+      background: linear-gradient(180deg, rgba(255,255,255,.10), rgba(255,255,255,.06));
+      box-shadow: 0 28px 70px rgba(0,0,0,.55);
+      backdrop-filter: blur(18px);
+      transform: translateY(16px);
+      opacity:0;
+      transition: transform .22s ease, opacity .22s ease;
+      overflow:hidden;
+    }
+    .overlay.show .modal{
+      transform: translateY(0);
+      opacity:1;
+    }
+    .modal-head{
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:12px;
+      padding: 14px 16px;
+      border-bottom: 1px solid rgba(255,255,255,.10);
+    }
+    .modal-title{
+      margin:0;
+      font-size: 14px;
+      letter-spacing:.2px;
+      color: rgba(255,255,255,.92);
+      display:flex;
+      align-items:center;
+      gap:10px;
+    }
+    .xbtn{
+      border:0;
+      background: rgba(255,255,255,.08);
+      color: rgba(255,255,255,.92);
+      width:42px; height:42px;
+      border-radius: 16px;
+      cursor:pointer;
+      transition: transform .18s ease, background .18s ease;
+    }
+    .xbtn:hover{ background: rgba(255,255,255,.12); transform: translateY(-1px); }
+    .xbtn:active{ transform: translateY(0); }
+
+    .modal-body{ padding: 14px 16px 16px; }
+    .menu-grid{
+      display:grid;
+      grid-template-columns: 1fr;
+      gap: 10px;
+    }
+    @media (min-width: 720px){
+      .menu-grid{ grid-template-columns: 1fr 1fr; }
+    }
+
+    .menu-tile{
+      width:100%;
+      padding: 16px 14px;
+      border-radius: 22px;
+      border: 1px solid rgba(255,255,255,.16);
+      background: rgba(10,12,36,.26);
+      cursor:pointer;
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:12px;
+      transition: transform .18s ease, background .18s ease, border-color .18s ease;
+    }
+    .menu-tile:hover{
+      transform: translateY(-1px);
+      background: rgba(10,12,36,.36);
+      border-color: rgba(255,255,255,.22);
+    }
+    .tile-left{
+      display:flex;
+      align-items:center;
+      gap:12px;
+      min-width:0;
+    }
+    .ico{
+      width:44px; height:44px;
+      border-radius: 16px;
+      display:grid;
+      place-items:center;
+      border:1px solid rgba(255,255,255,.14);
+      background: linear-gradient(135deg, rgba(255,255,255,.12), rgba(255,255,255,.06));
+    }
+    .tile-left .txt{
+      min-width:0;
+    }
+    .tile-left .txt strong{
+      display:block;
+      font-size: 14px;
+      color: rgba(255,255,255,.94);
+      letter-spacing:.2px;
+    }
+    .tile-left .txt span{
+      display:block;
+      font-size: 12px;
+      color: rgba(255,255,255,.68);
+      margin-top:2px;
+      white-space:nowrap;
+      overflow:hidden;
+      text-overflow:ellipsis;
+      max-width: 45vw;
+    }
+    @media (min-width: 720px){
+      .tile-left .txt span{ max-width: 240px; }
+    }
+
+    .chev{
+      opacity:.75;
+    }
+
+    .social-block{
+      margin-top: 12px;
+      padding-top: 12px;
+      border-top: 1px solid rgba(255,255,255,.10);
+    }
+    .social-title{
+      margin: 0 0 10px 2px;
+      font-size: 12px;
+      color: rgba(255,255,255,.75);
+      letter-spacing:.6px;
+      text-transform: uppercase;
+    }
+    .social-row{
+      display:grid;
+      grid-template-columns: 1fr;
+      gap: 10px;
+    }
+    @media (min-width: 720px){
+      .social-row{ grid-template-columns: 1fr 1fr 1fr; }
+    }
+
+    /* Tabelas (admin) */
+    .table-wrap{
+      overflow:auto;
+      border-radius: 18px;
+      border:1px solid rgba(255,255,255,.12);
+      background: rgba(10,12,36,.24);
+    }
+    table{
+      width:100%;
+      border-collapse: collapse;
+      min-width: 760px;
+    }
+    th, td{
+      text-align:left;
+      padding: 12px 12px;
+      border-bottom: 1px solid rgba(255,255,255,.08);
+      color: rgba(255,255,255,.86);
+      font-size: 13px;
+      vertical-align: middle;
+      white-space: nowrap;
+    }
+    th{
+      font-size: 12px;
+      color: rgba(255,255,255,.70);
+      letter-spacing: .45px;
+      text-transform: uppercase;
+      background: rgba(255,255,255,.05);
+      position: sticky;
+      top: 0;
+      z-index: 1;
+    }
+    tr:hover td{ background: rgba(255,255,255,.03); }
+
+    .actions{
+      display:flex;
+      gap:8px;
+      align-items:center;
+    }
+    .mini{
+      padding: 9px 10px;
+      border-radius: 14px;
+      font-size: 12px;
+      font-weight: 750;
+      box-shadow:none;
+    }
+
+    /* Nav interna (aluno/admin) */
+    .tabs{
+      display:flex;
+      gap:8px;
+      flex-wrap:wrap;
+      margin: 12px 0 6px;
+    }
+    .tab{
+      border:1px solid rgba(255,255,255,.14);
+      background: rgba(255,255,255,.06);
+      color: rgba(255,255,255,.88);
+      padding: 10px 12px;
+      border-radius: 16px;
+      cursor:pointer;
+      font-weight: 750;
+      transition: transform .18s ease, background .18s ease;
+      user-select:none;
+    }
+    .tab:hover{ transform: translateY(-1px); background: rgba(255,255,255,.08); }
+    .tab.active{
+      background: linear-gradient(135deg, rgba(108,92,231,.52), rgba(0,210,255,.28));
+      border-color: rgba(255,255,255,.22);
+    }
+
+    .stack{ display:grid; gap: 12px; }
+    .muted{ color: var(--muted); }
+    .tiny{ font-size: 12px; color: var(--faint); }
+
+    /* Mensagens */
+    .msg{
+      border: 1px solid rgba(255,255,255,.12);
+      background: rgba(10,12,36,.24);
+      border-radius: 18px;
+      padding: 12px 12px;
+    }
+    .msg .meta{
+      display:flex;
+      gap:10px;
+      align-items:center;
+      justify-content:space-between;
+      color: rgba(255,255,255,.70);
+      font-size: 12px;
+      margin-bottom: 8px;
+    }
+    .msg .body{
+      color: rgba(255,255,255,.90);
+      line-height:1.5;
+      white-space: pre-wrap;
+      word-break: break-word;
+    }
+
+    /* Rodapé sutil */
+    footer{
+      width:min(var(--maxw), calc(100% - 24px));
+      margin: 0 auto 18px;
+      padding: 10px 0;
+      color: rgba(255,255,255,.58);
+      font-size: 12px;
+      display:flex;
+      justify-content:space-between;
+      gap:12px;
+      flex-wrap:wrap;
+    }
+
+    /* Utilitários */
+    .row{ display:flex; gap:12px; flex-wrap:wrap; align-items:center; }
+    .right{ margin-left:auto; }
+    .hide{ display:none !important; }
+
+    /* Acessibilidade */
+    .sr{
+      position:absolute;
+      width:1px;height:1px;
+      padding:0;margin:-1px;
+      overflow:hidden;clip:rect(0,0,0,0);
+      border:0;
+    }
+  </style>
+</head>
+
+<body>
+  <canvas id="stars" aria-hidden="true"></canvas>
+  <div class="atmo" aria-hidden="true"></div>
+
+  <!-- Planetas -->
+  <div class="planet p1" aria-hidden="true"></div>
+  <div class="planet p2" aria-hidden="true"><div class="ring"></div></div>
+  <div class="planet p3" aria-hidden="true"></div>
+
+  <!-- Foguete e Astronauta (decorativos) -->
+  <svg class="floaty rocket" style="--rot:-12deg" viewBox="0 0 128 128" aria-hidden="true">
+    <defs>
+      <linearGradient id="rg" x1="0" y1="0" x2="1" y2="1">
+        <stop offset="0" stop-color="rgba(108,92,231,1)"/>
+        <stop offset="1" stop-color="rgba(0,210,255,1)"/>
+      </linearGradient>
+      <linearGradient id="rf" x1="0" y1="0" x2="1" y2="1">
+        <stop offset="0" stop-color="rgba(255,79,216,1)"/>
+        <stop offset="1" stop-color="rgba(255,184,107,1)"/>
+      </linearGradient>
+    </defs>
+    <path d="M74 12c14 9 22 25 22 44 0 23-12 44-32 58-20-14-32-35-32-58 0-19 8-35 22-44z" fill="rgba(255,255,255,.10)" stroke="rgba(255,255,255,.22)" stroke-width="2"/>
+    <path d="M74 16c11 8 18 22 18 40 0 21-10 40-28 53-18-13-28-32-28-53 0-18 7-32 18-40z" fill="url(#rg)" opacity=".95"/>
+    <circle cx="64" cy="54" r="12" fill="rgba(10,12,36,.55)" stroke="rgba(255,255,255,.28)" stroke-width="2"/>
+    <path d="M38 82l-16 10 6-20z" fill="url(#rf)" opacity=".95"/>
+    <path d="M90 82l16 10-6-20z" fill="url(#rf)" opacity=".95"/>
+    <path d="M64 112c-6-4-10-9-12-14 7 2 12 2 12 2s5 0 12-2c-2 5-6 10-12 14z" fill="rgba(255,255,255,.14)" stroke="rgba(255,255,255,.22)" stroke-width="2"/>
+    <path d="M64 110c-5-4-8-8-9-12 6 1 9 1 9 1s3 0 9-1c-1 4-4 8-9 12z" fill="url(#rf)"/>
+    <path d="M64 124c-10-6-16-16-16-16s10 4 16 4 16-4 16-4-6 10-16 16z" fill="rgba(255,184,107,.65)"/>
+  </svg>
+
+  <svg class="floaty astronaut" style="--rot:8deg" viewBox="0 0 160 160" aria-hidden="true">
+    <defs>
+      <linearGradient id="ag" x1="0" y1="0" x2="1" y2="1">
+        <stop offset="0" stop-color="rgba(255,255,255,.95)"/>
+        <stop offset="1" stop-color="rgba(255,255,255,.70)"/>
+      </linearGradient>
+      <linearGradient id="ah" x1="0" y1="0" x2="1" y2="1">
+        <stop offset="0" stop-color="rgba(0,210,255,1)"/>
+        <stop offset="1" stop-color="rgba(108,92,231,1)"/>
+      </linearGradient>
+    </defs>
+    <path d="M52 66c0-18 13-34 28-34s28 16 28 34-13 28-28 28-28-10-28-28z" fill="url(#ag)" opacity=".9" stroke="rgba(255,255,255,.22)" stroke-width="2"/>
+    <path d="M62 66c0-12 8-22 18-22s18 10 18 22-8 18-18 18-18-6-18-18z" fill="rgba(10,12,36,.55)" stroke="rgba(255,255,255,.18)" stroke-width="2"/>
+    <path d="M56 96c-10 6-16 16-16 28 0 10 6 18 14 18h52c8 0 14-8 14-18 0-12-6-22-16-28-8 6-16 10-24 10s-16-4-24-10z" fill="rgba(255,255,255,.10)" stroke="rgba(255,255,255,.20)" stroke-width="2"/>
+    <path d="M56 98c8 6 16 10 24 10s16-4 24-10c10 6 16 14 16 26 0 8-4 14-10 14H50c-6 0-10-6-10-14 0-12 6-20 16-26z" fill="rgba(255,255,255,.12)"/>
+    <rect x="66" y="112" width="28" height="18" rx="8" fill="url(#ah)" opacity=".85" stroke="rgba(255,255,255,.22)" stroke-width="2"/>
+    <circle cx="74" cy="121" r="2.5" fill="rgba(255,255,255,.85)"/>
+    <circle cx="86" cy="121" r="2.5" fill="rgba(255,255,255,.85)"/>
+  </svg>
+
+  <div class="wrap">
+    <header>
+      <div class="header-inner">
+        <div class="brand" role="banner">
+          <div class="logo" id="brandLogo" aria-label="Logo">
+            <img id="brandLogoImg" alt="Logo do projeto" />
+            <span id="brandLogoFallback" style="font-weight:900;font-size:14px;letter-spacing:.3px;">CEMO</span>
+          </div>
+          <div style="min-width:0">
+            <h1 id="brandTitle">Estudantes de Atitude — CEMO 2026</h1>
+            <p id="brandSub">Colégio Estadual Mansões Odisseia • Sistema do Projeto</p>
+          </div>
+        </div>
+
+        <button class="menu-btn" id="openMenuBtn" aria-label="Abrir menu principal">
+          <svg class="menu-icon" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+            <path d="M4 7h16M4 12h16M4 17h16" stroke="rgba(255,255,255,.92)" stroke-width="2.2" stroke-linecap="round"/>
+          </svg>
+        </button>
+      </div>
+    </header>
+
+    <main>
+      <!-- HOME -->
+      <section class="section active" id="sec-home">
+        <div class="card hero">
+          <div class="hero-grid">
+            <div>
+              <h2 class="title" id="homeTitle">
+                Bem-vindos ao Estudantes de Atitude<br/>CEMO – 2026
+              </h2>
+              <p class="subtitle" id="homeSubtitle">
+                Projeto vinculado à <strong>CGE-GO</strong>, ao <strong>Governo de Goiás</strong> e à <strong>SEDUC-GO</strong>.
+              </p>
+
+              <div class="cta-row">
+                <button class="btn big primary" id="openMenuBtn2">
+                  <span aria-hidden="true">🚀</span>
+                  <span>Acessar Menu</span>
+                </button>
+                <span class="badge" id="regStatusBadge">
+                  <span id="regStatusDot" aria-hidden="true">⏳</span>
+                  <span id="regStatusText">Carregando período de inscrições…</span>
+                </span>
+              </div>
+
+              <div class="hr"></div>
+
+              <div class="row">
+                <span class="badge">
+                  <span aria-hidden="true">🛰️</span>
+                  <span>Experiência moderna • Mobile-first • Glass UI</span>
+                </span>
+                <span class="badge">
+                  <span aria-hidden="true">🧭</span>
+                  <span>Inscrição, consulta, aluno e administração</span>
+                </span>
+              </div>
+            </div>
+
+            <div class="card pad" style="border-radius:26px;">
+              <div class="row" style="justify-content:space-between;">
+                <div class="badge" style="background: rgba(255,255,255,.07);">
+                  <span aria-hidden="true">🪐</span>
+                  <span>Tema: Sistema Solar</span>
+                </div>
+                <div class="badge" id="todayBadge">
+                  <span aria-hidden="true">📅</span>
+                  <span id="todayText">—</span>
+                </div>
+              </div>
+
+              <div class="hr"></div>
+
+              <p class="muted" style="margin:0;line-height:1.6">
+                Use o menu para realizar sua inscrição, consultar seu status, acessar a área do estudante (selecionados)
+                ou entrar na área administrativa para gerenciar todo o sistema.
+              </p>
+
+              <div class="hr"></div>
+
+              <div class="row">
+                <button class="btn gray mini" id="goInscricaoMini" title="Ir para Inscrições">
+                  <span aria-hidden="true">
+                    <!-- ícone foguete -->
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                      <path d="M13 3c4 2 7 6 7 11-4 0-8-3-10-7l3-4z" stroke="rgba(255,255,255,.9)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                      <path d="M11 5C7 6 4 10 4 15c5 0 9-3 10-7" stroke="rgba(255,255,255,.65)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                      <path d="M7 17c-1 2-1 3-1 4 1 0 2 0 4-1" stroke="rgba(255,255,255,.6)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                    </svg>
+                  </span>
+                  <span>Inscrições</span>
+                </button>
+
+                <button class="btn gray mini" id="goConsultaMini" title="Ir para Consulta">
+                  <span aria-hidden="true">
+                    <!-- ícone lupa -->
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                      <circle cx="11" cy="11" r="6.5" stroke="rgba(255,255,255,.9)" stroke-width="2"/>
+                      <path d="M16.5 16.5L21 21" stroke="rgba(255,255,255,.7)" stroke-width="2" stroke-linecap="round"/>
+                    </svg>
+                  </span>
+                  <span>Consulta</span>
+                </button>
+              </div>
+
+              <p class="tiny" style="margin:10px 0 0">
+                Dica: o botão ☰ (canto superior direito) e “Acessar Menu 🚀” abrem o mesmo menu.
+              </p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- INSCRIÇÕES -->
+      <section class="section" id="sec-inscricoes">
+        <div class="card pad">
+          <div class="row">
+            <h3 style="margin:0;font-size:18px">📝 Inscrições</h3>
+            <div class="right">
+              <button class="btn gray mini" data-go="home">Voltar</button>
+            </div>
+          </div>
+          <p class="muted" style="margin:10px 0 0;line-height:1.6">
+            Preencha os dados com atenção. O CPF passa por máscara e validação real. O WhatsApp exige tamanho válido.
+          </p>
+
+          <div class="hr"></div>
+
+          <form id="formInscricao" autocomplete="off" novalidate>
+            <div class="grid cols2">
+              <div>
+                <label for="inNome">Nome completo</label>
+                <input class="field" id="inNome" name="nome" placeholder="Ex.: Maria Aparecida de Souza" maxlength="120" required />
+                <div class="help">Digite o nome completo (sem abreviações).</div>
+              </div>
+
+              <div>
+                <label for="inCPF">CPF</label>
+                <input class="field" id="inCPF" name="cpf" inputmode="numeric" placeholder="000.000.000-00" maxlength="14" required />
+                <div class="help">Máscara automática e validação oficial do dígito verificador.</div>
+              </div>
+            </div>
+
+            <div class="grid cols2" style="margin-top:12px">
+              <div>
+                <label for="inWhats">WhatsApp</label>
+                <input class="field" id="inWhats" name="whats" inputmode="numeric" placeholder="(00) 00000-0000" maxlength="15" required />
+                <div class="help">Informe DDD + número (11 dígitos). Ex.: (62) 9XXXX-XXXX</div>
+              </div>
+
+              <div>
+                <label for="inEmail">E-mail</label>
+                <input class="field" id="inEmail" name="email" inputmode="email" placeholder="seuemail@dominio.com" maxlength="140" required />
+                <div class="help">Validação de formato (ex.: nome@dominio.com).</div>
+              </div>
+            </div>
+
+            <div class="grid cols3" style="margin-top:12px">
+              <div>
+                <label for="inSerie">Série</label>
+                <select class="field" id="inSerie" name="serie" required>
+                  <option value="" selected>Selecione…</option>
+                  <option>6º ano</option><option>7º ano</option><option>8º ano</option><option>9º ano</option>
+                  <option>1º ano (Ensino Médio)</option><option>2º ano (Ensino Médio)</option><option>3º ano (Ensino Médio)</option>
+                </select>
+              </div>
+
+              <div>
+                <label for="inTurma">Turma</label>
+                <select class="field" id="inTurma" name="turma" required>
+                  <option value="" selected>Selecione…</option>
+                  <option>A</option><option>B</option><option>C</option><option>D</option><option>E</option><option>F</option><option>G</option>
+                </select>
+              </div>
+
+              <div style="display:flex;align-items:flex-end;gap:10px">
+                <button class="btn big pink" id="btnEnviarInscricao" type="submit" style="width:100%">
+                  <span aria-hidden="true">🧾</span>
+                  <span>Enviar Inscrição</span>
+                </button>
+              </div>
+            </div>
+
+            <p class="tiny" id="inscricaoHint" style="margin:12px 0 0">
+              O botão pode ser desativado automaticamente se o período de inscrições estiver encerrado (definido pelo administrador).
+            </p>
+          </form>
+        </div>
+      </section>
+
+      <!-- CONSULTA -->
+      <section class="section" id="sec-consulta">
+        <div class="card pad">
+          <div class="row">
+            <h3 style="margin:0;font-size:18px">🔍 Consulta</h3>
+            <div class="right">
+              <button class="btn gray mini" data-go="home">Voltar</button>
+            </div>
+          </div>
+          <p class="muted" style="margin:10px 0 0;line-height:1.6">
+            Informe seu CPF para consultar o status da inscrição.
+          </p>
+
+          <div class="hr"></div>
+
+          <form id="formConsulta" autocomplete="off" novalidate>
+            <div class="grid cols2">
+              <div>
+                <label for="qCPF">CPF</label>
+                <input class="field" id="qCPF" inputmode="numeric" placeholder="000.000.000-00" maxlength="14" required />
+                <div class="help">CPF válido (máscara automática).</div>
+              </div>
+              <div style="display:flex;align-items:flex-end">
+                <button class="btn big primary" type="submit" style="width:100%">
+                  <span aria-hidden="true">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                      <circle cx="11" cy="11" r="6.5" stroke="rgba(255,255,255,.92)" stroke-width="2"/>
+                      <path d="M16.5 16.5L21 21" stroke="rgba(255,255,255,.78)" stroke-width="2" stroke-linecap="round"/>
+                    </svg>
+                  </span>
+                  <span>Consultar</span>
+                </button>
+              </div>
+            </div>
+          </form>
+        </div>
+      </section>
+
+      <!-- ÁREA DO ESTUDANTE (LOGIN) -->
+      <section class="section" id="sec-estudante-login">
+        <div class="card pad">
+          <div class="row">
+            <h3 style="margin:0;font-size:18px">🎓 Área do Estudante</h3>
+            <div class="right">
+              <button class="btn gray mini" data-go="home">Voltar</button>
+            </div>
+          </div>
+
+          <p class="muted" style="margin:10px 0 0;line-height:1.6">
+            Acesso disponível para estudantes selecionados. O login é o CPF e a senha é criada pelo administrador.
+          </p>
+
+          <div class="hr"></div>
+
+          <form id="formAlunoLogin" autocomplete="off" novalidate>
+            <div class="grid cols2">
+              <div>
+                <label for="alCPF">Login (CPF)</label>
+                <input class="field" id="alCPF" inputmode="numeric" placeholder="000.000.000-00" maxlength="14" required />
+              </div>
+              <div>
+                <label for="alSenha">Senha</label>
+                <input class="field" id="alSenha" type="password" placeholder="Digite sua senha" minlength="4" maxlength="40" required />
+              </div>
+            </div>
+            <div class="row" style="margin-top:12px">
+              <button class="btn big green" type="submit">
+                <span aria-hidden="true">🧑‍🚀</span>
+                <span>Entrar</span>
+              </button>
+              <span class="tiny">Dica: se você foi selecionado(a), solicite sua senha com a coordenação.</span>
+            </div>
+          </form>
+        </div>
+      </section>
+
+      <!-- ÁREA DO ESTUDANTE (PORTAL) -->
+      <section class="section" id="sec-estudante-portal">
+        <div class="card pad">
+          <div class="row">
+            <div>
+              <h3 style="margin:0;font-size:18px">🎓 Portal do Estudante</h3>
+              <p class="muted" style="margin:6px 0 0" id="alunoInfo">—</p>
+            </div>
+            <div class="right row">
+              <button class="btn gray mini" id="btnAlunoLogout">Sair</button>
+            </div>
+          </div>
+
+          <div class="tabs" id="tabsAluno">
+            <button class="tab active" data-tab="a-chamados">Chamados</button>
+            <button class="tab" data-tab="a-etapas">Etapas</button>
+            <button class="tab" data-tab="a-time">Time</button>
+            <button class="tab" data-tab="a-config">Configurações</button>
+          </div>
+
+          <div class="hr"></div>
+
+          <div class="stack" id="a-chamados">
+            <div class="badge">
+              <span aria-hidden="true">📡</span>
+              <span>Mensagens da Administração</span>
+            </div>
+            <div id="alunoChamadosList" class="stack"></div>
+          </div>
+
+          <div class="stack hide" id="a-etapas">
+            <div class="badge">
+              <span aria-hidden="true">🧩</span>
+              <span>Etapas do Projeto</span>
+            </div>
+            <div id="alunoEtapasList" class="stack"></div>
+          </div>
+
+          <div class="stack hide" id="a-time">
+            <div class="badge">
+              <span aria-hidden="true">🌟</span>
+              <span>Participantes Selecionados</span>
+            </div>
+            <div id="alunoTimeList" class="stack"></div>
+          </div>
+
+          <div class="stack hide" id="a-config">
+            <div class="badge">
+              <span aria-hidden="true">⚙️</span>
+              <span>Configurações</span>
+            </div>
+
+            <div class="card pad" style="border-radius:22px">
+              <h4 style="margin:0 0 10px">Alterar senha</h4>
+              <form id="formAlunoSenha" autocomplete="off" novalidate>
+                <div class="grid cols3">
+                  <div>
+                    <label for="alOld">Senha atual</label>
+                    <input class="field" id="alOld" type="password" required />
+                  </div>
+                  <div>
+                    <label for="alNew">Nova senha</label>
+                    <input class="field" id="alNew" type="password" minlength="6" maxlength="40" required />
+                    <div class="help">Mínimo 6 caracteres.</div>
+                  </div>
+                  <div>
+                    <label for="alNew2">Confirmar nova senha</label>
+                    <input class="field" id="alNew2" type="password" minlength="6" maxlength="40" required />
+                  </div>
+                </div>
+                <div class="row" style="margin-top:12px">
+                  <button class="btn primary mini" type="submit">Salvar nova senha</button>
+                </div>
+              </form>
+            </div>
+
+            <div class="card pad" style="border-radius:22px">
+              <h4 style="margin:0 0 10px">Fale conosco</h4>
+              <p class="tiny" style="margin:0 0 10px">Envie uma mensagem para a área administrativa.</p>
+              <form id="formAlunoContato" autocomplete="off" novalidate>
+                <label for="alMsg">Mensagem</label>
+                <textarea class="field" id="alMsg" rows="4" placeholder="Digite sua mensagem..." maxlength="1000" required></textarea>
+                <div class="row" style="margin-top:12px">
+                  <button class="btn pink mini" type="submit">Enviar mensagem</button>
+                </div>
+              </form>
+            </div>
+
+            <div class="card pad" style="border-radius:22px">
+              <h4 style="margin:0 0 10px">Mensagens enviadas</h4>
+              <div id="alunoMsgsEnviadas" class="stack"></div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ÁREA ADMINISTRATIVA (LOGIN) -->
+      <section class="section" id="sec-admin-login">
+        <div class="card pad">
+          <div class="row">
+            <h3 style="margin:0;font-size:18px">🛠️ Área Administrativa</h3>
+            <div class="right">
+              <button class="btn gray mini" data-go="home">Voltar</button>
+            </div>
+          </div>
+          <p class="muted" style="margin:10px 0 0;line-height:1.6">
+            Acesso restrito. Digite a senha administrativa para abrir o painel completo do projeto.
+          </p>
+
+          <div class="hr"></div>
+
+          <form id="formAdminLogin" autocomplete="off" novalidate>
+            <div class="grid cols2">
+              <div>
+                <label for="admSenha">Senha</label>
+                <input class="field" id="admSenha" type="password" placeholder="Senha administrativa" maxlength="40" required />
+              </div>
+              <div style="display:flex;align-items:flex-end">
+                <button class="btn big primary" type="submit" style="width:100%">
+                  <span aria-hidden="true">🧑‍💼</span>
+                  <span>Entrar no Painel</span>
+                </button>
+              </div>
+            </div>
+          </form>
+        </div>
+      </section>
+
+      <!-- ÁREA ADMINISTRATIVA (PAINEL) -->
+      <section class="section" id="sec-admin-panel">
+        <div class="card pad">
+          <div class="row">
+            <div>
+              <h3 style="margin:0;font-size:18px">🛠️ Painel Administrativo</h3>
+              <p class="muted" style="margin:6px 0 0">Gerencie inscrições, acessos, chamados, etapas e configurações do sistema.</p>
+            </div>
+            <div class="right row">
+              <button class="btn gray mini" id="btnAdminLogout">Sair</button>
+            </div>
+          </div>
+
+          <div class="tabs" id="tabsAdmin">
+            <button class="tab active" data-tab="ad-inscricoes">1️⃣ Inscrições</button>
+            <button class="tab" data-tab="ad-acessos">2️⃣ Acessos</button>
+            <button class="tab" data-tab="ad-chamados">3️⃣ Chamados</button>
+            <button class="tab" data-tab="ad-etapas">4️⃣ Etapas</button>
+            <button class="tab" data-tab="ad-links">5️⃣ Links Sociais</button>
+            <button class="tab" data-tab="ad-config">6️⃣ Configurações</button>
+          </div>
+
+          <div class="hr"></div>
+
+          <!-- 1) INSCRIÇÕES -->
+          <div class="stack" id="ad-inscricoes">
+            <div class="row">
+              <span class="badge"><span aria-hidden="true">🧾</span><span>Lista de inscrições</span></span>
+              <div class="right row">
+                <input class="field" id="admSearch" placeholder="Buscar por nome/CPF..." style="max-width:320px" />
+                <button class="btn gray mini" id="btnExportJson" title="Exportar backup (JSON)">Backup</button>
+                <button class="btn gray mini" id="btnResetDemo" title="Resetar tudo (cuidado!)">Reset</button>
+              </div>
+            </div>
+            <div class="table-wrap">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Data</th>
+                    <th>Nome</th>
+                    <th>CPF</th>
+                    <th>WhatsApp</th>
+                    <th>E-mail</th>
+                    <th>Série</th>
+                    <th>Turma</th>
+                    <th>Status</th>
+                    <th>Ações</th>
+                  </tr>
+                </thead>
+                <tbody id="admInscricoesBody"></tbody>
+              </table>
+            </div>
+            <p class="tiny">Ações: editar, selecionar/não selecionar, cancelar. O status aparece para cada aluno.</p>
+          </div>
+
+          <!-- 2) ACESSOS -->
+          <div class="stack hide" id="ad-acessos">
+            <div class="row">
+              <span class="badge"><span aria-hidden="true">🔐</span><span>Acessos de alunos selecionados</span></span>
+              <span class="tiny">Login é sempre o CPF. Gere a senha para liberar o portal.</span>
+            </div>
+
+            <div class="table-wrap">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Nome</th>
+                    <th>CPF</th>
+                    <th>Série</th>
+                    <th>Turma</th>
+                    <th>Senha</th>
+                    <th>Ações</th>
+                  </tr>
+                </thead>
+                <tbody id="admAcessosBody"></tbody>
+              </table>
+            </div>
+          </div>
+
+          <!-- 3) CHAMADOS -->
+          <div class="stack hide" id="ad-chamados">
+            <div class="row">
+              <span class="badge"><span aria-hidden="true">📣</span><span>Enviar chamados</span></span>
+            </div>
+
+            <div class="card pad" style="border-radius:22px">
+              <form id="formAdmChamado" autocomplete="off" novalidate>
+                <div class="grid cols2">
+                  <div>
+                    <label for="admChamadoTo">Enviar para</label>
+                    <select class="field" id="admChamadoTo" required>
+                      <option value="ALL" selected>Todos os selecionados</option>
+                    </select>
+                    <div class="help">Você pode enviar para um aluno específico ou para todos.</div>
+                  </div>
+                  <div>
+                    <label for="admChamadoMsg">Mensagem</label>
+                    <input class="field" id="admChamadoMsg" placeholder="Ex.: Reunião amanhã às 14h no laboratório." maxlength="300" required />
+                  </div>
+                </div>
+                <div class="row" style="margin-top:12px">
+                  <button class="btn primary mini" type="submit">Enviar chamado</button>
+                </div>
+              </form>
+            </div>
+
+            <div class="card pad" style="border-radius:22px">
+              <h4 style="margin:0 0 10px">Histórico de chamados (admin → alunos)</h4>
+              <div id="admChamadosList" class="stack"></div>
+            </div>
+
+            <div class="card pad" style="border-radius:22px">
+              <h4 style="margin:0 0 10px">Mensagens dos alunos (Fale conosco)</h4>
+              <div id="admMsgsAlunos" class="stack"></div>
+            </div>
+          </div>
+
+          <!-- 4) ETAPAS -->
+          <div class="stack hide" id="ad-etapas">
+            <div class="row">
+              <span class="badge"><span aria-hidden="true">🧩</span><span>Gerenciar etapas</span></span>
+            </div>
+
+            <div class="card pad" style="border-radius:22px">
+              <h4 style="margin:0 0 10px">Criar nova etapa</h4>
+              <form id="formEtapa" autocomplete="off" novalidate>
+                <div class="grid cols2">
+                  <div>
+                    <label for="etTitulo">Título</label>
+                    <input class="field" id="etTitulo" maxlength="80" placeholder="Ex.: Oficina de Integridade" required />
+                  </div>
+                  <div>
+                    <label for="etDesc">Descrição</label>
+                    <input class="field" id="etDesc" maxlength="140" placeholder="Ex.: Dinâmica e produção do mural do projeto" required />
+                  </div>
+                </div>
+                <div class="grid cols3" style="margin-top:12px">
+                  <div>
+                    <label for="etIni">Data início</label>
+                    <input class="field" id="etIni" type="date" required />
+                  </div>
+                  <div>
+                    <label for="etFim">Data fim</label>
+                    <input class="field" id="etFim" type="date" required />
+                  </div>
+                  <div style="display:flex;align-items:flex-end;gap:10px">
+                    <button class="btn pink mini" type="submit" style="width:100%">Adicionar etapa</button>
+                  </div>
+                </div>
+              </form>
+            </div>
+
+            <div class="card pad" style="border-radius:22px">
+              <h4 style="margin:0 0 10px">Lista de etapas</h4>
+              <div id="admEtapasList" class="stack"></div>
+            </div>
+          </div>
+
+          <!-- 5) LINKS SOCIAIS -->
+          <div class="stack hide" id="ad-links">
+            <div class="row">
+              <span class="badge"><span aria-hidden="true">🔗</span><span>Links Sociais</span></span>
+              <span class="tiny">Esses links alimentam os botões do menu principal.</span>
+            </div>
+
+            <div class="card pad" style="border-radius:22px">
+              <form id="formLinks" autocomplete="off" novalidate>
+                <div class="grid cols3">
+                  <div>
+                    <label for="lkYt">YouTube</label>
+                    <input class="field" id="lkYt" placeholder="https://..." maxlength="240" />
+                  </div>
+                  <div>
+                    <label for="lkWa">WhatsApp</label>
+                    <input class="field" id="lkWa" placeholder="https://wa.me/..." maxlength="240" />
+                  </div>
+                  <div>
+                    <label for="lkIg">Instagram</label>
+                    <input class="field" id="lkIg" placeholder="https://instagram.com/..." maxlength="240" />
+                  </div>
+                </div>
+                <div class="row" style="margin-top:12px">
+                  <button class="btn green mini" type="submit">Salvar links</button>
+                </div>
+              </form>
+            </div>
+          </div>
+
+          <!-- 6) CONFIG -->
+          <div class="stack hide" id="ad-config">
+            <div class="row">
+              <span class="badge"><span aria-hidden="true">⚙️</span><span>Configurações do sistema</span></span>
+            </div>
+
+            <div class="card pad" style="border-radius:22px">
+              <h4 style="margin:0 0 10px">Período de inscrições</h4>
+              <form id="formPeriodo" autocomplete="off" novalidate>
+                <div class="grid cols3">
+                  <div>
+                    <label for="cfgIni">Data início</label>
+                    <input class="field" id="cfgIni" type="date" required />
+                  </div>
+                  <div>
+                    <label for="cfgFim">Data fim</label>
+                    <input class="field" id="cfgFim" type="date" required />
+                  </div>
+                  <div style="display:flex;align-items:flex-end">
+                    <button class="btn primary mini" type="submit" style="width:100%">Salvar período</button>
+                  </div>
+                </div>
+                <p class="tiny" style="margin:10px 0 0">
+                  Se inscrições encerradas, o botão “Inscrições” é desativado automaticamente no menu.
+                </p>
+              </form>
+            </div>
+
+            <div class="card pad" style="border-radius:22px">
+              <h4 style="margin:0 0 10px">Identidade visual e textos</h4>
+              <form id="formBrand" autocomplete="off" novalidate>
+                <div class="grid cols2">
+                  <div>
+                    <label for="cfgTitle">Título principal (Home)</label>
+                    <input class="field" id="cfgTitle" maxlength="80" />
+                    <div class="help">Ex.: Bem-vindos ao Estudantes de Atitude CEMO – 2026</div>
+                  </div>
+                  <div>
+                    <label for="cfgSubtitle">Subtítulo (Home)</label>
+                    <input class="field" id="cfgSubtitle" maxlength="160" />
+                  </div>
+                </div>
+
+                <div class="grid cols3" style="margin-top:12px">
+                  <div>
+                    <label for="cfgA">Cor A (hex)</label>
+                    <input class="field" id="cfgA" placeholder="#6c5ce7" maxlength="7" />
+                  </div>
+                  <div>
+                    <label for="cfgB">Cor B (hex)</label>
+                    <input class="field" id="cfgB" placeholder="#00d2ff" maxlength="7" />
+                  </div>
+                  <div>
+                    <label for="cfgC">Cor C (hex)</label>
+                    <input class="field" id="cfgC" placeholder="#ff4fd8" maxlength="7" />
+                  </div>
+                </div>
+
+                <div class="grid cols2" style="margin-top:12px">
+                  <div>
+                    <label for="cfgLogo">Logo (opcional)</label>
+                    <input class="field" id="cfgLogo" type="file" accept="image/*" />
+                    <div class="help">A imagem é salva no localStorage (base64).</div>
+                  </div>
+                  <div style="display:flex;align-items:flex-end">
+                    <button class="btn green mini" type="submit" style="width:100%">Salvar identidade</button>
+                  </div>
+                </div>
+              </form>
+            </div>
+
+            <div class="card pad" style="border-radius:22px">
+              <h4 style="margin:0 0 10px">Criar novos botões de menu</h4>
+              <p class="tiny" style="margin:0 0 10px">
+                Você pode adicionar botões extras no menu principal, apontando para um link externo.
+              </p>
+
+              <form id="formCustomBtn" autocomplete="off" novalidate>
+                <div class="grid cols2">
+                  <div>
+                    <label for="cbLabel">Texto do botão</label>
+                    <input class="field" id="cbLabel" maxlength="26" placeholder="Ex.: Regulamento" required />
+                  </div>
+                  <div>
+                    <label for="cbUrl">URL</label>
+                    <input class="field" id="cbUrl" maxlength="240" placeholder="https://..." required />
+                  </div>
+                </div>
+                <div class="row" style="margin-top:12px">
+                  <button class="btn pink mini" type="submit">Adicionar botão</button>
+                </div>
+              </form>
+
+              <div class="hr"></div>
+
+              <h4 style="margin:0 0 10px">Botões extras atuais</h4>
+              <div id="customBtnsList" class="stack"></div>
+            </div>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <footer>
+      <span>© <span id="yearNow"></span> • Estudantes de Atitude — CEMO</span>
+      <span class="tiny">Sistema local (localStorage) • Tema espacial • UX/UI moderno</span>
+    </footer>
+  </div>
+
+  <!-- MODAL: MENU PRINCIPAL -->
+  <div class="overlay" id="menuOverlay" role="dialog" aria-modal="true" aria-labelledby="menuTitle">
+    <div class="modal">
+      <div class="modal-head">
+        <h3 class="modal-title" id="menuTitle">
+          <span aria-hidden="true">🧭</span>
+          <span>Menu Principal</span>
+        </h3>
+        <button class="xbtn" id="closeMenuBtn" aria-label="Fechar menu">✕</button>
+      </div>
+
+      <div class="modal-body">
+        <div class="menu-grid" id="menuButtons">
+          <!-- Botões montados via JS (inclui extras do admin) -->
+        </div>
+
+        <div class="social-block">
+          <div class="social-title">Redes Sociais</div>
+          <div class="social-row">
+            <button class="menu-tile" id="btnYt">
+              <div class="tile-left">
+                <div class="ico" style="background: linear-gradient(135deg, rgba(255,79,216,.35), rgba(255,184,107,.25));">
+                  <!-- ícone "play" -->
+                  <svg width="22" height="22" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                    <path d="M9 8l8 4-8 4V8z" fill="rgba(255,255,255,.92)"/>
+                    <rect x="3.5" y="6" width="17" height="12" rx="3" stroke="rgba(255,255,255,.28)" stroke-width="1.8"/>
+                  </svg>
+                </div>
+                <div class="txt">
+                  <strong>YouTube</strong>
+                  <span id="ytHint">Link configurável pelo admin</span>
+                </div>
+              </div>
+              <span class="chev" aria-hidden="true">↗</span>
+            </button>
+
+            <button class="menu-tile" id="btnWa">
+              <div class="tile-left">
+                <div class="ico" style="background: linear-gradient(135deg, rgba(53,208,127,.35), rgba(0,210,255,.20));">
+                  <!-- ícone chat -->
+                  <svg width="22" height="22" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                    <path d="M7 18l-2.2 2.2c-.4.4-1.1.1-1.1-.5V7a3 3 0 0 1 3-3h11a3 3 0 0 1 3 3v7a3 3 0 0 1-3 3H9.2a3 3 0 0 0-2.2.9z" stroke="rgba(255,255,255,.88)" stroke-width="2" stroke-linejoin="round"/>
+                    <path d="M8 9h8M8 12h6" stroke="rgba(255,255,255,.6)" stroke-width="2" stroke-linecap="round"/>
+                  </svg>
+                </div>
+                <div class="txt">
+                  <strong>WhatsApp</strong>
+                  <span id="waHint">Link configurável pelo admin</span>
+                </div>
+              </div>
+              <span class="chev" aria-hidden="true">↗</span>
+            </button>
+
+            <button class="menu-tile" id="btnIg">
+              <div class="tile-left">
+                <div class="ico" style="background: linear-gradient(135deg, rgba(108,92,231,.35), rgba(255,79,216,.20));">
+                  <!-- ícone câmera -->
+                  <svg width="22" height="22" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                    <rect x="6" y="6" width="12" height="12" rx="3.2" stroke="rgba(255,255,255,.88)" stroke-width="2"/>
+                    <circle cx="12" cy="12" r="3.2" stroke="rgba(255,255,255,.68)" stroke-width="2"/>
+                    <circle cx="16.8" cy="7.2" r="1" fill="rgba(255,255,255,.78)"/>
+                  </svg>
+                </div>
+                <div class="txt">
+                  <strong>Instagram</strong>
+                  <span id="igHint">Link configurável pelo admin</span>
+                </div>
+              </div>
+              <span class="chev" aria-hidden="true">↗</span>
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL GENÉRICO (edições / senha / mensagens) -->
+  <div class="overlay" id="uiOverlay" role="dialog" aria-modal="true" aria-labelledby="uiTitle">
+    <div class="modal">
+      <div class="modal-head">
+        <h3 class="modal-title" id="uiTitle">
+          <span aria-hidden="true">🪐</span>
+          <span id="uiTitleText">Janela</span>
+        </h3>
+        <button class="xbtn" id="uiClose" aria-label="Fechar">✕</button>
+      </div>
+      <div class="modal-body" id="uiBody"></div>
+    </div>
+  </div>
+
+  <script>
+    /******************************************************************
+     *  UTILITÁRIOS BÁSICOS
+     ******************************************************************/
+    const $ = (sel, root=document) => root.querySelector(sel);
+    const $$ = (sel, root=document) => [...root.querySelectorAll(sel)];
+    const nowISO = () => new Date().toISOString();
+    const onlyDigits = (s) => (s||"").replace(/\D+/g, "");
+    const clamp = (n,min,max)=>Math.max(min, Math.min(max, n));
+    const pad2 = (n)=>String(n).padStart(2,"0");
+
+    function fmtDateTime(iso){
+      const d = new Date(iso);
+      const dd = pad2(d.getDate());
+      const mm = pad2(d.getMonth()+1);
+      const yy = d.getFullYear();
+      const hh = pad2(d.getHours());
+      const mi = pad2(d.getMinutes());
+      return `${dd}/${mm}/${yy} ${hh}:${mi}`;
+    }
+    function fmtDate(isoOrDate){
+      const d = isoOrDate instanceof Date ? isoOrDate : new Date(isoOrDate);
+      const dd = pad2(d.getDate());
+      const mm = pad2(d.getMonth()+1);
+      const yy = d.getFullYear();
+      return `${dd}/${mm}/${yy}`;
+    }
+
+    function escapeHTML(str){
+      return String(str||"")
+        .replaceAll("&","&amp;")
+        .replaceAll("<","&lt;")
+        .replaceAll(">","&gt;")
+        .replaceAll('"',"&quot;")
+        .replaceAll("'","&#039;");
+    }
+
+    /******************************************************************
+     *  STORAGE (DB LOCAL)
+     ******************************************************************/
+    const DB_KEY = "EDA_CEMO_2026_DB_v1";
+    const SESSION_KEY = "EDA_CEMO_2026_SESSION_v1";
+
+    function loadDB(){
+      try{
+        const raw = localStorage.getItem(DB_KEY);
+        if(!raw) return null;
+        return JSON.parse(raw);
+      }catch(e){
+        console.warn("DB inválido:", e);
+        return null;
+      }
+    }
+    function saveDB(db){
+      localStorage.setItem(DB_KEY, JSON.stringify(db));
+    }
+
+    function loadSession(){
+      try{
+        const raw = localStorage.getItem(SESSION_KEY);
+        if(!raw) return { alunoCpf:null, admin:false };
+        return JSON.parse(raw);
+      }catch(e){
+        return { alunoCpf:null, admin:false };
+      }
+    }
+    function saveSession(sess){
+      localStorage.setItem(SESSION_KEY, JSON.stringify(sess));
+    }
+
+    /******************************************************************
+     *  SEGURANÇA: HASH (sem senhas em texto no código)
+     *  - Admin: senha fixa validada por hash (SHA-256 com SALT)
+     *  - Alunos: senha gerada no painel, salva como hash; exibida 1 vez
+     ******************************************************************/
+    const HASH_SALT = "CEMO-2026::";
+    const ADMIN_HASH = "6cd8b7a9b60f50927d5dd9760e4c27ae37315e3c295c21d94bdd757dc4f722c7"; // sha256("CEMO-2026::" + senha_admin)
+
+    async function sha256Hex(input){
+      const data = new TextEncoder().encode(input);
+      const hash = await crypto.subtle.digest("SHA-256", data);
+      const bytes = new Uint8Array(hash);
+      return [...bytes].map(b=>b.toString(16).padStart(2,"0")).join("");
+    }
+    async function hashPassword(pass){
+      return sha256Hex(HASH_SALT + String(pass||""));
+    }
+
+    /******************************************************************
+     *  REGRAS: CPF (máscara + validação real)
+     ******************************************************************/
+    function maskCPF(value){
+      const d = onlyDigits(value).slice(0,11);
+      let out = d;
+      if(d.length > 3) out = d.slice(0,3)+"."+d.slice(3);
+      if(d.length > 6) out = out.slice(0,7)+"."+out.slice(7);
+      if(d.length > 9) out = out.slice(0,11)+"-"+out.slice(11);
+      return out;
+    }
+    function isValidCPF(cpfDigits){
+      const cpf = onlyDigits(cpfDigits);
+      if(cpf.length !== 11) return false;
+      if(/^(\d)\1+$/.test(cpf)) return false; // todos iguais
+      const calc = (base, factor)=>{
+        let sum=0;
+        for(let i=0;i<base.length;i++) sum += Number(base[i]) * (factor - i);
+        const mod = (sum * 10) % 11;
+        return (mod === 10 ? 0 : mod);
+      };
+      const d1 = calc(cpf.slice(0,9), 10);
+      const d2 = calc(cpf.slice(0,10), 11);
+      return d1 === Number(cpf[9]) && d2 === Number(cpf[10]);
+    }
+
+    /******************************************************************
+     *  WhatsApp (máscara + tamanho)
+     *  - Enforce: 11 dígitos (DDD + 9 dígitos)
+     ******************************************************************/
+    function maskWhats(value){
+      const d = onlyDigits(value).slice(0,11);
+      const ddd = d.slice(0,2);
+      const p1 = d.slice(2,7);
+      const p2 = d.slice(7,11);
+      let out = "";
+      if(d.length>0) out = "(" + ddd;
+      if(d.length>=2) out += ") ";
+      if(d.length>=3) out += p1;
+      if(d.length>=8) out += "-" + p2;
+      return out.trim();
+    }
+    function isValidWhats(value){
+      const d = onlyDigits(value);
+      return d.length === 11;
+    }
+
+    /******************************************************************
+     *  E-mail (formato)
+     ******************************************************************/
+    function isValidEmail(email){
+      const s = String(email||"").trim();
+      // regex robusto o suficiente para validação prática
+      return /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(s);
+    }
+
+    /******************************************************************
+     *  INIT DB (com defaults)
+     ******************************************************************/
+    function defaultDB(){
+      const today = new Date();
+      const ini = new Date(today.getFullYear(), today.getMonth(), today.getDate()-7);
+      const fim = new Date(today.getFullYear(), today.getMonth()+2, today.getDate());
+      return {
+        settings: {
+          homeTitle: "Bem-vindos ao Estudantes de Atitude\nCEMO – 2026",
+          homeSubtitle: "Projeto vinculado à CGE-GO, ao Governo de Goiás e à SEDUC-GO.",
+          colors: { A:"#6c5ce7", B:"#00d2ff", C:"#ff4fd8" },
+          logoDataUrl: "",
+          social: { youtube:"", whatsapp:"", instagram:"" },
+          regPeriod: { start: ini.toISOString().slice(0,10), end: fim.toISOString().slice(0,10) },
+          customMenuButtons: [] // {id,label,url}
+        },
+        registrations: [],
+        credentials: {}, // cpfDigits: { passHash, updatedAt }
+        calls: [], // {id,toCpf|'ALL', createdAt, message}
+        studentMsgs: [], // {id, fromCpf, createdAt, message, adminReply, repliedAt}
+        etapas: [
+          { id: crypto.randomUUID(), title:"Lançamento do Projeto", desc:"Apresentação e alinhamento geral", start: ini.toISOString().slice(0,10), end: ini.toISOString().slice(0,10), completed:false },
+          { id: crypto.randomUUID(), title:"Oficina de Integridade", desc:"Dinâmica e produção de materiais", start: fim.toISOString().slice(0,10), end: fim.toISOString().slice(0,10), completed:false }
+        ]
+      };
+    }
+
+    let DB = loadDB();
+    if(!DB){
+      DB = defaultDB();
+      saveDB(DB);
+    }
+
+    let SESSION = loadSession();
+
+    /******************************************************************
+     *  UI: SEÇÕES / NAVEGAÇÃO
+     ******************************************************************/
+    const sections = {
+      home: $("#sec-home"),
+      inscricoes: $("#sec-inscricoes"),
+      consulta: $("#sec-consulta"),
+      estudanteLogin: $("#sec-estudante-login"),
+      estudantePortal: $("#sec-estudante-portal"),
+      adminLogin: $("#sec-admin-login"),
+      adminPanel: $("#sec-admin-panel")
+    };
+
+    function showSection(key){
+      Object.values(sections).forEach(s=>s.classList.remove("active"));
+      sections[key].classList.add("active");
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    }
+
+    $$("#sec-inscricoes [data-go], #sec-consulta [data-go], #sec-estudante-login [data-go], #sec-admin-login [data-go]")
+      .forEach(btn => btn.addEventListener("click", () => showSection(btn.dataset.go)));
+
+    /******************************************************************
+     *  MENU PRINCIPAL (MODAL)
+     ******************************************************************/
+    const menuOverlay = $("#menuOverlay");
+    const openMenuBtn = $("#openMenuBtn");
+    const openMenuBtn2 = $("#openMenuBtn2");
+    const closeMenuBtn = $("#closeMenuBtn");
+
+    function openMenu(){
+      renderMenuButtons();
+      menuOverlay.classList.add("show");
+    }
+    function closeMenu(){
+      menuOverlay.classList.remove("show");
+    }
+
+    openMenuBtn.addEventListener("click", openMenu);
+    openMenuBtn2.addEventListener("click", openMenu);
+    closeMenuBtn.addEventListener("click", closeMenu);
+    menuOverlay.addEventListener("click", (e)=>{
+      if(e.target === menuOverlay) closeMenu();
+    });
+
+    // Botões rápidos na home
+    $("#goInscricaoMini").addEventListener("click", ()=>{
+      closeMenu();
+      showSection("inscricoes");
+    });
+    $("#goConsultaMini").addEventListener("click", ()=>{
+      closeMenu();
+      showSection("consulta");
+    });
+
+    function iconSVG(kind){
+      // Ícones modernos (foguete, lupa, engrenagem, chapéu formatura)
+      const common = 'width="22" height="22" viewBox="0 0 24 24" fill="none" aria-hidden="true"';
+      if(kind==="rocket") return `<svg ${common}><path d="M13 3c4 2 7 6 7 11-4 0-8-3-10-7l3-4z" stroke="rgba(255,255,255,.92)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><path d="M11 5C7 6 4 10 4 15c5 0 9-3 10-7" stroke="rgba(255,255,255,.72)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><path d="M7 17c-1 2-1 3-1 4 1 0 2 0 4-1" stroke="rgba(255,255,255,.64)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
+      if(kind==="search") return `<svg ${common}><circle cx="11" cy="11" r="6.5" stroke="rgba(255,255,255,.92)" stroke-width="2"/><path d="M16.5 16.5L21 21" stroke="rgba(255,255,255,.78)" stroke-width="2" stroke-linecap="round"/></svg>`;
+      if(kind==="cap") return `<svg ${common}><path d="M3 9l9-4 9 4-9 4-9-4z" stroke="rgba(255,255,255,.92)" stroke-width="2" stroke-linejoin="round"/><path d="M7 11v5c0 1 2.5 3 5 3s5-2 5-3v-5" stroke="rgba(255,255,255,.70)" stroke-width="2" stroke-linecap="round"/><path d="M21 9v6" stroke="rgba(255,255,255,.68)" stroke-width="2" stroke-linecap="round"/></svg>`;
+      if(kind==="gear") return `<svg ${common}><path d="M12 15.5a3.5 3.5 0 1 0 0-7 3.5 3.5 0 0 0 0 7z" stroke="rgba(255,255,255,.92)" stroke-width="2"/><path d="M19.4 15a7.9 7.9 0 0 0 .1-2l2-1.2-2-3.6-2.3.7a8 8 0 0 0-1.7-1l-.3-2.4H10l-.3 2.4a8 8 0 0 0-1.7 1l-2.3-.7-2 3.6 2 1.2a7.9 7.9 0 0 0 .1 2l-2 1.2 2 3.6 2.3-.7a8 8 0 0 0 1.7 1l.3 2.4h4l.3-2.4a8 8 0 0 0 1.7-1l2.3.7 2-3.6-2-1.2z" stroke="rgba(255,255,255,.68)" stroke-width="2" stroke-linejoin="round"/></svg>`;
+      return `<svg ${common}><circle cx="12" cy="12" r="9" stroke="rgba(255,255,255,.7)" stroke-width="2"/></svg>`;
+    }
+
+    function tileGradient(kind){
+      if(kind==="inscricoes") return "background: linear-gradient(135deg, rgba(255,79,216,.42), rgba(255,184,107,.20));";
+      if(kind==="consulta") return "background: linear-gradient(135deg, rgba(0,210,255,.32), rgba(108,92,231,.22));";
+      if(kind==="aluno") return "background: linear-gradient(135deg, rgba(53,208,127,.32), rgba(0,210,255,.16));";
+      if(kind==="admin") return "background: linear-gradient(135deg, rgba(108,92,231,.32), rgba(255,79,216,.18));";
+      return "background: linear-gradient(135deg, rgba(255,255,255,.14), rgba(255,255,255,.06));";
+    }
+
+    function regOpenStatus(){
+      const { start, end } = DB.settings.regPeriod || {};
+      if(!start || !end) return { ok:false, reason:"Período não configurado" };
+      const t = new Date();
+      const s = new Date(start+"T00:00:00");
+      const e = new Date(end+"T23:59:59");
+      if(t < s) return { ok:false, reason:"Inscrições ainda não iniciadas" };
+      if(t > e) return { ok:false, reason:"Inscrições encerradas" };
+      return { ok:true, reason:`Inscrições abertas até ${fmtDate(end)}` };
+    }
+
+    function renderMenuButtons(){
+      const menu = $("#menuButtons");
+      const status = regOpenStatus();
+
+      const baseButtons = [
+        {
+          key:"inscricoes", label:"Inscrições", desc:"Cadastro de estudantes", icon:"rocket",
+          kind:"inscricoes", disabled: !status.ok, onClick:()=>showSection("inscricoes")
+        },
+        {
+          key:"consulta", label:"Consulta", desc:"Verificar status pelo CPF", icon:"search",
+          kind:"consulta", disabled:false, onClick:()=>showSection("consulta")
+        },
+        {
+          key:"estudante", label:"Área do Estudante", desc:"Chamados, etapas e time", icon:"cap",
+          kind:"aluno", disabled:false, onClick:()=>{
+            if(SESSION.alunoCpf) showSection("estudantePortal");
+            else showSection("estudanteLogin");
+          }
+        },
+        {
+          key:"admin", label:"Área Administrativa", desc:"Painel completo do sistema", icon:"gear",
+          kind:"admin", disabled:false, onClick:()=>{
+            if(SESSION.admin) showSection("adminPanel");
+            else showSection("adminLogin");
+          }
+        }
+      ];
+
+      const extras = (DB.settings.customMenuButtons||[]).map(x => ({
+        key: x.id,
+        label: x.label,
+        desc: "Botão extra (admin)",
+        icon: "search",
+        kind: "extra",
+        disabled: false,
+        onClick: ()=>openExternal(x.url)
+      }));
+
+      const allButtons = [...baseButtons, ...extras];
+
+      menu.innerHTML = allButtons.map(btn => `
+        <button class="menu-tile" data-key="${escapeHTML(btn.key)}" ${btn.disabled ? "disabled" : ""}>
+          <div class="tile-left">
+            <div class="ico" style="${tileGradient(btn.kind)}">
+              ${iconSVG(btn.icon)}
+            </div>
+            <div class="txt">
+              <strong>${escapeHTML(btn.label)}</strong>
+              <span>${escapeHTML(btn.desc)}${btn.key==="inscricoes" ? (" • " + status.reason) : ""}</span>
+            </div>
+          </div>
+          <span class="chev" aria-hidden="true">›</span>
+        </button>
+      `).join("");
+
+      // Bind
+      $$("#menuButtons .menu-tile").forEach((el, i)=>{
+        const btn = allButtons[i];
+        if(btn.disabled){
+          el.style.opacity = ".55";
+          el.style.cursor = "not-allowed";
+          el.addEventListener("click",(e)=>e.preventDefault());
+          return;
+        }
+        el.addEventListener("click", ()=>{
+          closeMenu();
+          btn.onClick();
+        });
+      });
+
+      // Redes sociais
+      const social = DB.settings.social || {};
+      bindSocial("#btnYt", social.youtube, "#ytHint");
+      bindSocial("#btnWa", social.whatsapp, "#waHint");
+      bindSocial("#btnIg", social.instagram, "#igHint");
+    }
+
+    function bindSocial(btnSel, url, hintSel){
+      const btn = $(btnSel);
+      const hint = $(hintSel);
+      const has = !!String(url||"").trim();
+      hint.textContent = has ? url : "Link configurável pelo admin";
+      btn.disabled = !has;
+      btn.style.opacity = has ? "1" : ".55";
+      btn.style.cursor = has ? "pointer" : "not-allowed";
+      btn.onclick = has ? ()=>openExternal(url) : null;
+    }
+
+    function openExternal(url){
+      try{
+        const u = String(url||"").trim();
+        if(!u) return;
+        // Abre em nova aba
+        window.open(u, "_blank", "noopener,noreferrer");
+      }catch(_){}
+    }
+
+    /******************************************************************
+     *  UI: MODAL GENÉRICO
+     ******************************************************************/
+    const uiOverlay = $("#uiOverlay");
+    const uiBody = $("#uiBody");
+    const uiTitleText = $("#uiTitleText");
+
+    function openUI(title, html){
+      uiTitleText.textContent = title;
+      uiBody.innerHTML = html;
+      uiOverlay.classList.add("show");
+    }
+    function closeUI(){
+      uiOverlay.classList.remove("show");
+      uiBody.innerHTML = "";
+    }
+    $("#uiClose").addEventListener("click", closeUI);
+    uiOverlay.addEventListener("click", (e)=>{
+      if(e.target === uiOverlay) closeUI();
+    });
+
+    /******************************************************************
+     *  INSCRIÇÕES
+     ******************************************************************/
+    const inCPF = $("#inCPF");
+    const inWhats = $("#inWhats");
+    const qCPF = $("#qCPF");
+    const alCPF = $("#alCPF");
+
+    // Máscaras ao digitar
+    [inCPF, qCPF, alCPF].forEach(el=>{
+      el.addEventListener("input", ()=>{
+        const pos = el.selectionStart;
+        el.value = maskCPF(el.value);
+        // Não precisamos reconstruir caret para este caso simples
+      });
+    });
+
+    inWhats.addEventListener("input", ()=>{
+      inWhats.value = maskWhats(inWhats.value);
+    });
+
+    function normalizeName(n){
+      return String(n||"")
+        .trim()
+        .replace(/\s+/g, " ")
+        .slice(0,120);
+    }
+
+    function validateInscricao(payload){
+      const nome = normalizeName(payload.nome);
+      const cpf = onlyDigits(payload.cpf);
+      const whats = onlyDigits(payload.whats);
+      const email = String(payload.email||"").trim();
+      const serie = String(payload.serie||"").trim();
+      const turma = String(payload.turma||"").trim();
+
+      if(nome.length < 6) return { ok:false, msg:"Nome completo inválido. Informe o nome completo." };
+      if(!isValidCPF(cpf)) return { ok:false, msg:"CPF inválido. Verifique e tente novamente." };
+      if(!isValidWhats(whats)) return { ok:false, msg:"WhatsApp inválido. Informe DDD + número (11 dígitos)." };
+      if(!isValidEmail(email)) return { ok:false, msg:"E-mail inválido. Verifique o formato." };
+      if(!serie) return { ok:false, msg:"Selecione a série." };
+      if(!turma) return { ok:false, msg:"Selecione a turma." };
+
+      return { ok:true, data:{ nome, cpf, whats, email, serie, turma } };
+    }
+
+    function existsActiveRegistration(cpfDigits){
+      const cpf = onlyDigits(cpfDigits);
+      return DB.registrations.some(r => r.cpf===cpf && r.status !== "cancelled");
+    }
+
+    $("#formInscricao").addEventListener("submit", (e)=>{
+      e.preventDefault();
+
+      const status = regOpenStatus();
+      if(!status.ok){
+        alert(status.reason + ". Procure a coordenação ou aguarde a abertura do período.");
+        return;
+      }
+
+      const payload = {
+        nome: $("#inNome").value,
+        cpf: inCPF.value,
+        whats: inWhats.value,
+        email: $("#inEmail").value,
+        serie: $("#inSerie").value,
+        turma: $("#inTurma").value
+      };
+
+      const v = validateInscricao(payload);
+      if(!v.ok){
+        alert(v.msg);
+        return;
+      }
+
+      if(existsActiveRegistration(v.data.cpf)){
+        alert("Já existe uma inscrição ativa para este CPF.");
+        return;
+      }
+
+      DB.registrations.push({
+        id: crypto.randomUUID(),
+        createdAt: nowISO(),
+        status: "not_selected", // por padrão (até seleção)
+        ...v.data
+      });
+      saveDB(DB);
+
+      alert("Inscrição enviada com sucesso!");
+      // após OK, limpa
+      $("#formInscricao").reset();
+      inCPF.value = "";
+      inWhats.value = "";
+    });
+
+    /******************************************************************
+     *  CONSULTA
+     ******************************************************************/
+    $("#formConsulta").addEventListener("submit", (e)=>{
+      e.preventDefault();
+
+      const cpfDigits = onlyDigits(qCPF.value);
+      if(!isValidCPF(cpfDigits)){
+        alert("CPF inválido. Verifique e tente novamente.");
+        qCPF.focus();
+        return;
+      }
+
+      const status = regOpenStatus();
+      // Respostas exigidas (inclui cenário antes do início)
+      if(!status.ok && status.reason === "Inscrições ainda não iniciadas"){
+        alert("Inscrições ainda não iniciadas");
+        qCPF.value = "";
+        return;
+      }
+
+      const reg = DB.registrations.find(r => r.cpf === cpfDigits && r.status !== "cancelled");
+      if(!reg){
+        alert("Inscrição não encontrada");
+        qCPF.value = "";
+        return;
+      }
+
+      if(reg.status === "selected"){
+        alert("Parabéns, você foi selecionado");
+      }else{
+        alert("Inscrição encontrada – não selecionado");
+      }
+
+      qCPF.value = "";
+    });
+
+    /******************************************************************
+     *  ÁREA DO ESTUDANTE
+     ******************************************************************/
+    function selectedRegistrationByCPF(cpfDigits){
+      const cpf = onlyDigits(cpfDigits);
+      return DB.registrations.find(r => r.cpf === cpf && r.status === "selected");
+    }
+
+    async function verifyAlunoLogin(cpfDigits, senha){
+      const cpf = onlyDigits(cpfDigits);
+      if(!isValidCPF(cpf)) return { ok:false, msg:"CPF inválido." };
+      const reg = selectedRegistrationByCPF(cpf);
+      if(!reg) return { ok:false, msg:"Acesso indisponível. CPF não selecionado ou inscrição inexistente." };
+
+      const cred = DB.credentials[cpf];
+      if(!cred) return { ok:false, msg:"Senha ainda não foi criada pelo administrador." };
+
+      const h = await hashPassword(senha);
+      if(h !== cred.passHash) return { ok:false, msg:"Senha incorreta." };
+      return { ok:true, reg };
+    }
+
+    $("#formAlunoLogin").addEventListener("submit", async (e)=>{
+      e.preventDefault();
+      const cpfDigits = onlyDigits($("#alCPF").value);
+      const senha = $("#alSenha").value || "";
+
+      const res = await verifyAlunoLogin(cpfDigits, senha);
+      if(!res.ok){
+        alert(res.msg);
+        return;
+      }
+
+      SESSION.alunoCpf = cpfDigits;
+      saveSession(SESSION);
+
+      $("#alSenha").value = "";
+      showSection("estudantePortal");
+      renderAlunoPortal();
+    });
+
+    $("#btnAlunoLogout").addEventListener("click", ()=>{
+      SESSION.alunoCpf = null;
+      saveSession(SESSION);
+      showSection("home");
+    });
+
+    // Tabs aluno
+    $("#tabsAluno").addEventListener("click", (e)=>{
+      const btn = e.target.closest(".tab");
+      if(!btn) return;
+      $$("#tabsAluno .tab").forEach(t=>t.classList.remove("active"));
+      btn.classList.add("active");
+
+      const tabId = btn.dataset.tab;
+      ["a-chamados","a-etapas","a-time","a-config"].forEach(id=>{
+        $("#"+id).classList.toggle("hide", id !== tabId);
+      });
+    });
+
+    function alunoReg(){
+      const cpf = SESSION.alunoCpf;
+      if(!cpf) return null;
+      return DB.registrations.find(r=>r.cpf===cpf && r.status!=="cancelled") || null;
+    }
+
+    function renderAlunoPortal(){
+      const reg = alunoReg();
+      if(!reg){
+        // fallback: sessão inválida
+        SESSION.alunoCpf = null;
+        saveSession(SESSION);
+        showSection("estudanteLogin");
+        return;
+      }
+      $("#alunoInfo").innerHTML = `<strong>${escapeHTML(reg.nome)}</strong> • ${escapeHTML(reg.serie)} • Turma ${escapeHTML(reg.turma)} • CPF ${maskCPF(reg.cpf)}`;
+
+      renderAlunoChamados();
+      renderAlunoEtapas();
+      renderAlunoTime();
+      renderAlunoMsgs();
+
+      // Reset tab para Chamados
+      $$("#tabsAluno .tab").forEach((t,i)=>t.classList.toggle("active", i===0));
+      ["a-chamados","a-etapas","a-time","a-config"].forEach((id,i)=>{
+        $("#"+id).classList.toggle("hide", i!==0);
+      });
+    }
+
+    function renderAlunoChamados(){
+      const cpf = SESSION.alunoCpf;
+      const list = $("#alunoChamadosList");
+      const calls = (DB.calls||[])
+        .filter(c => c.toCpf==="ALL" || c.toCpf===cpf)
+        .sort((a,b)=> new Date(b.createdAt)-new Date(a.createdAt));
+
+      if(!calls.length){
+        list.innerHTML = `<div class="msg"><div class="meta"><span>Sem mensagens</span><span class="badge warn">Aguardando comunicação</span></div><div class="body">Nenhum chamado foi enviado pela administração até o momento.</div></div>`;
+        return;
+      }
+
+      list.innerHTML = calls.map(c => `
+        <div class="msg">
+          <div class="meta">
+            <span>${escapeHTML(fmtDateTime(c.createdAt))}</span>
+            <span class="badge ok">${c.toCpf==="ALL" ? "Para todos" : "Individual"}</span>
+          </div>
+          <div class="body">${escapeHTML(c.message)}</div>
+        </div>
+      `).join("");
+    }
+
+    function renderAlunoEtapas(){
+      const list = $("#alunoEtapasList");
+      const etapas = (DB.etapas||[]).slice().sort((a,b)=>{
+        return new Date(a.start) - new Date(b.start);
+      });
+
+      if(!etapas.length){
+        list.innerHTML = `<div class="msg"><div class="meta"><span>Sem etapas cadastradas</span><span class="badge warn">Admin</span></div><div class="body">A administração ainda não cadastrou etapas do projeto.</div></div>`;
+        return;
+      }
+
+      list.innerHTML = etapas.map(et => {
+        const done = !!et.completed;
+        return `
+          <div class="msg">
+            <div class="meta">
+              <span>${escapeHTML(et.title)}</span>
+              <span class="badge ${done ? "ok" : "warn"}">${done ? "Concluída ✅" : "Em andamento ⏳"}</span>
+            </div>
+            <div class="body">
+              <div class="tiny">Período: ${escapeHTML(fmtDate(et.start))} → ${escapeHTML(fmtDate(et.end))}</div>
+              <div style="margin-top:6px">${escapeHTML(et.desc)}</div>
+            </div>
+          </div>
+        `;
+      }).join("");
+    }
+
+    function renderAlunoTime(){
+      const list = $("#alunoTimeList");
+      const team = DB.registrations.filter(r => r.status==="selected").sort((a,b)=>a.nome.localeCompare(b.nome, "pt-BR"));
+      if(!team.length){
+        list.innerHTML = `<div class="msg"><div class="meta"><span>Time ainda não definido</span><span class="badge warn">Seleção</span></div><div class="body">Ainda não há participantes selecionados cadastrados.</div></div>`;
+        return;
+      }
+      list.innerHTML = team.map(r=>`
+        <div class="msg">
+          <div class="meta">
+            <span>${escapeHTML(r.nome)}</span>
+            <span class="badge ok">Selecionado</span>
+          </div>
+          <div class="body">
+            <div class="tiny">${escapeHTML(r.serie)} • Turma ${escapeHTML(r.turma)} • CPF ${maskCPF(r.cpf)}</div>
+          </div>
+        </div>
+      `).join("");
+    }
+
+    function renderAlunoMsgs(){
+      const cpf = SESSION.alunoCpf;
+      const list = $("#alunoMsgsEnviadas");
+      const msgs = (DB.studentMsgs||[]).filter(m=>m.fromCpf===cpf).sort((a,b)=>new Date(b.createdAt)-new Date(a.createdAt));
+      if(!msgs.length){
+        list.innerHTML = `<div class="tiny">Nenhuma mensagem enviada.</div>`;
+        return;
+      }
+      list.innerHTML = msgs.map(m=>`
+        <div class="msg">
+          <div class="meta">
+            <span>Você • ${escapeHTML(fmtDateTime(m.createdAt))}</span>
+            <span class="badge ${m.adminReply ? "ok":"warn"}">${m.adminReply ? "Respondido":"Aguardando"}</span>
+          </div>
+          <div class="body">${escapeHTML(m.message)}</div>
+          ${m.adminReply ? `
+            <div class="hr" style="margin:10px 0"></div>
+            <div class="tiny">Admin • ${escapeHTML(fmtDateTime(m.repliedAt))}</div>
+            <div class="body">${escapeHTML(m.adminReply)}</div>
+          `:``}
+        </div>
+      `).join("");
+    }
+
+    // Alterar senha (aluno)
+    $("#formAlunoSenha").addEventListener("submit", async (e)=>{
+      e.preventDefault();
+      const cpf = SESSION.alunoCpf;
+      if(!cpf) return;
+
+      const oldPass = $("#alOld").value || "";
+      const n1 = $("#alNew").value || "";
+      const n2 = $("#alNew2").value || "";
+
+      if(n1.length < 6){
+        alert("A nova senha deve ter no mínimo 6 caracteres.");
+        return;
+      }
+      if(n1 !== n2){
+        alert("Confirmação de senha não confere.");
+        return;
+      }
+
+      const cred = DB.credentials[cpf];
+      if(!cred){
+        alert("Credencial inexistente. Procure a coordenação.");
+        return;
+      }
+
+      const oldHash = await hashPassword(oldPass);
+      if(oldHash !== cred.passHash){
+        alert("Senha atual incorreta.");
+        return;
+      }
+
+      cred.passHash = await hashPassword(n1);
+      cred.updatedAt = nowISO();
+      DB.credentials[cpf] = cred;
+      saveDB(DB);
+
+      alert("Senha alterada com sucesso!");
+      $("#formAlunoSenha").reset();
+    });
+
+    // Fale conosco (aluno → admin)
+    $("#formAlunoContato").addEventListener("submit", (e)=>{
+      e.preventDefault();
+      const cpf = SESSION.alunoCpf;
+      if(!cpf) return;
+
+      const msg = String($("#alMsg").value||"").trim();
+      if(msg.length < 5){
+        alert("Digite uma mensagem mais completa.");
+        return;
+      }
+
+      DB.studentMsgs.push({
+        id: crypto.randomUUID(),
+        fromCpf: cpf,
+        createdAt: nowISO(),
+        message: msg,
+        adminReply: "",
+        repliedAt: ""
+      });
+      saveDB(DB);
+
+      alert("Mensagem enviada para a administração!");
+      $("#formAlunoContato").reset();
+      renderAlunoMsgs();
+    });
+
+    /******************************************************************
+     *  ADMIN LOGIN / PAINEL
+     ******************************************************************/
+    $("#formAdminLogin").addEventListener("submit", async (e)=>{
+      e.preventDefault();
+      const pass = $("#admSenha").value || "";
+      const h = await hashPassword(pass);
+
+      if(h !== ADMIN_HASH){
+        alert("Senha administrativa incorreta.");
+        return;
+      }
+
+      SESSION.admin = true;
+      saveSession(SESSION);
+
+      $("#admSenha").value = "";
+      showSection("adminPanel");
+      renderAdminAll();
+    });
+
+    $("#btnAdminLogout").addEventListener("click", ()=>{
+      SESSION.admin = false;
+      saveSession(SESSION);
+      showSection("home");
+    });
+
+    // Tabs admin
+    $("#tabsAdmin").addEventListener("click", (e)=>{
+      const btn = e.target.closest(".tab");
+      if(!btn) return;
+
+      $$("#tabsAdmin .tab").forEach(t=>t.classList.remove("active"));
+      btn.classList.add("active");
+
+      const tabId = btn.dataset.tab;
+      ["ad-inscricoes","ad-acessos","ad-chamados","ad-etapas","ad-links","ad-config"].forEach(id=>{
+        $("#"+id).classList.toggle("hide", id !== tabId);
+      });
+    });
+
+    function statusBadgeHTML(status){
+      if(status==="selected") return `<span class="badge ok">Selecionado</span>`;
+      if(status==="not_selected") return `<span class="badge warn">Não selecionado</span>`;
+      if(status==="cancelled") return `<span class="badge bad">Cancelado</span>`;
+      return `<span class="badge">Pendente</span>`;
+    }
+
+    function renderAdminInscricoes(filter=""){
+      const body = $("#admInscricoesBody");
+      const q = String(filter||"").trim().toLowerCase();
+      const rows = DB.registrations
+        .slice()
+        .sort((a,b)=> new Date(b.createdAt)-new Date(a.createdAt))
+        .filter(r => {
+          if(!q) return true;
+          return r.nome.toLowerCase().includes(q) || r.cpf.includes(onlyDigits(q));
+        });
+
+      body.innerHTML = rows.map(r=>`
+        <tr data-id="${escapeHTML(r.id)}">
+          <td>${escapeHTML(fmtDateTime(r.createdAt))}</td>
+          <td>${escapeHTML(r.nome)}</td>
+          <td>${escapeHTML(maskCPF(r.cpf))}</td>
+          <td>${escapeHTML(maskWhats(r.whats))}</td>
+          <td>${escapeHTML(r.email)}</td>
+          <td>${escapeHTML(r.serie)}</td>
+          <td>${escapeHTML(r.turma)}</td>
+          <td>${statusBadgeHTML(r.status)}</td>
+          <td>
+            <div class="actions">
+              <button class="btn gray mini" data-act="edit">Editar</button>
+              <button class="btn green mini" data-act="toggle">${r.status==="selected" ? "Não selecionar" : "Selecionar"}</button>
+              <button class="btn pink mini" data-act="cancel">Cancelar</button>
+            </div>
+          </td>
+        </tr>
+      `).join("") || `<tr><td colspan="9" style="color:rgba(255,255,255,.7);padding:18px">Nenhuma inscrição registrada.</td></tr>`;
+    }
+
+    $("#admSearch").addEventListener("input", (e)=>{
+      renderAdminInscricoes(e.target.value);
+    });
+
+    $("#admInscricoesBody").addEventListener("click", (e)=>{
+      const tr = e.target.closest("tr[data-id]");
+      const act = e.target.closest("button")?.dataset.act;
+      if(!tr || !act) return;
+      const id = tr.dataset.id;
+      const r = DB.registrations.find(x=>x.id===id);
+      if(!r) return;
+
+      if(act==="edit") return openEditInscricao(r);
+      if(act==="toggle") return toggleSelect(r);
+      if(act==="cancel") return cancelReg(r);
+    });
+
+    function openEditInscricao(r){
+      const html = `
+        <div class="card pad" style="border-radius:22px">
+          <form id="editForm" autocomplete="off" novalidate>
+            <div class="grid cols2">
+              <div>
+                <label>Nome completo</label>
+                <input class="field" id="edNome" value="${escapeHTML(r.nome)}" maxlength="120" required />
+              </div>
+              <div>
+                <label>CPF (bloqueado)</label>
+                <input class="field" value="${escapeHTML(maskCPF(r.cpf))}" disabled />
+                <div class="help">Para manter integridade do login, o CPF não é editável.</div>
+              </div>
+            </div>
+            <div class="grid cols2" style="margin-top:12px">
+              <div>
+                <label>WhatsApp</label>
+                <input class="field" id="edWhats" value="${escapeHTML(maskWhats(r.whats))}" maxlength="15" required />
+              </div>
+              <div>
+                <label>E-mail</label>
+                <input class="field" id="edEmail" value="${escapeHTML(r.email)}" maxlength="140" required />
+              </div>
+            </div>
+            <div class="grid cols3" style="margin-top:12px">
+              <div>
+                <label>Série</label>
+                <select class="field" id="edSerie" required>
+                  <option ${r.serie===""?"selected":""} value="">Selecione…</option>
+                  ${["6º ano","7º ano","8º ano","9º ano","1º ano (Ensino Médio)","2º ano (Ensino Médio)","3º ano (Ensino Médio)"].map(s=>`
+                    <option ${r.serie===s?"selected":""}>${escapeHTML(s)}</option>
+                  `).join("")}
+                </select>
+              </div>
+              <div>
+                <label>Turma</label>
+                <select class="field" id="edTurma" required>
+                  <option ${r.turma===""?"selected":""} value="">Selecione…</option>
+                  ${["A","B","C","D","E","F","G"].map(t=>`
+                    <option ${r.turma===t?"selected":""}>${escapeHTML(t)}</option>
+                  `).join("")}
+                </select>
+              </div>
+              <div style="display:flex;align-items:flex-end">
+                <button class="btn primary mini" type="submit" style="width:100%">Salvar alterações</button>
+              </div>
+            </div>
+          </form>
+        </div>
+      `;
+      openUI("Editar inscrição", html);
+
+      const edWhats = $("#edWhats");
+      edWhats.addEventListener("input", ()=> edWhats.value = maskWhats(edWhats.value));
+
+      $("#editForm").addEventListener("submit", (e)=>{
+        e.preventDefault();
+        const payload = {
+          nome: $("#edNome").value,
+          cpf: r.cpf,
+          whats: $("#edWhats").value,
+          email: $("#edEmail").value,
+          serie: $("#edSerie").value,
+          turma: $("#edTurma").value
+        };
+        const v = validateInscricao(payload);
+        if(!v.ok){
+          alert(v.msg);
+          return;
+        }
+        r.nome = v.data.nome;
+        r.whats = v.data.whats;
+        r.email = v.data.email;
+        r.serie = v.data.serie;
+        r.turma = v.data.turma;
+        saveDB(DB);
+        closeUI();
+        renderAdminAll();
+      });
+    }
+
+    function toggleSelect(r){
+      if(r.status==="cancelled"){
+        alert("Inscrição cancelada não pode ser selecionada.");
+        return;
+      }
+      r.status = (r.status==="selected") ? "not_selected" : "selected";
+      saveDB(DB);
+      renderAdminAll();
+    }
+
+    function cancelReg(r){
+      const ok = confirm("Deseja cancelar esta inscrição? (A inscrição ficará inválida no sistema)");
+      if(!ok) return;
+      r.status = "cancelled";
+      // opcional: remover acesso
+      delete DB.credentials[r.cpf];
+      saveDB(DB);
+      renderAdminAll();
+    }
+
+    /******************************************************************
+     *  ADMIN: ACESSOS (gerar senha)
+     ******************************************************************/
+    function randomPass(){
+      // senha forte o suficiente para simulação (sem expor no código)
+      const chars = "ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnpqrstuvwxyz23456789@#";
+      let out = "";
+      for(let i=0;i<10;i++){
+        out += chars[Math.floor(Math.random()*chars.length)];
+      }
+      return out;
+    }
+
+    async function setAlunoPassword(cpfDigits, plain){
+      const cpf = onlyDigits(cpfDigits);
+      DB.credentials[cpf] = {
+        passHash: await hashPassword(plain),
+        updatedAt: nowISO()
+      };
+      saveDB(DB);
+    }
+
+    function renderAdminAcessos(){
+      const body = $("#admAcessosBody");
+      const selected = DB.registrations.filter(r=>r.status==="selected").sort((a,b)=>a.nome.localeCompare(b.nome,"pt-BR"));
+
+      body.innerHTML = selected.map(r=>{
+        const cred = DB.credentials[r.cpf];
+        const has = !!cred;
+        return `
+          <tr data-cpf="${escapeHTML(r.cpf)}">
+            <td>${escapeHTML(r.nome)}</td>
+            <td>${escapeHTML(maskCPF(r.cpf))}</td>
+            <td>${escapeHTML(r.serie)}</td>
+            <td>${escapeHTML(r.turma)}</td>
+            <td>${has ? `<span class="badge ok">Criada</span>` : `<span class="badge warn">Não criada</span>`}</td>
+            <td>
+              <div class="actions">
+                <button class="btn primary mini" data-act="gen">Gerar senha</button>
+                ${has ? `<button class="btn gray mini" data-act="reset">Redefinir</button>` : ``}
+              </div>
+            </td>
+          </tr>
+        `;
+      }).join("") || `<tr><td colspan="6" style="color:rgba(255,255,255,.7);padding:18px">Nenhum aluno selecionado.</td></tr>`;
+    }
+
+    $("#admAcessosBody").addEventListener("click", async (e)=>{
+      const tr = e.target.closest("tr[data-cpf]");
+      const act = e.target.closest("button")?.dataset.act;
+      if(!tr || !act) return;
+
+      const cpf = tr.dataset.cpf;
+      if(act==="gen"){
+        const pass = randomPass();
+        await setAlunoPassword(cpf, pass);
+
+        // Exibir 1 vez (admin precisa copiar)
+        openUI("Senha gerada", `
+          <div class="card pad" style="border-radius:22px">
+            <p class="muted" style="margin:0 0 8px;line-height:1.6">
+              A senha abaixo foi gerada para o CPF <strong>${escapeHTML(maskCPF(cpf))}</strong>.
+              Copie e entregue ao estudante. Por segurança, ela não fica visível novamente.
+            </p>
+            <div class="hr"></div>
+            <div class="row">
+              <input class="field" id="genPassOut" value="${escapeHTML(pass)}" readonly style="flex:1;min-width:240px" />
+              <button class="btn green mini" id="copyPassBtn">Copiar</button>
+            </div>
+            <p class="tiny" style="margin:10px 0 0">Login do estudante: CPF • Acesso: Área do Estudante</p>
+          </div>
+        `);
+        $("#copyPassBtn").addEventListener("click", async ()=>{
+          try{
+            await navigator.clipboard.writeText(pass);
+            alert("Senha copiada!");
+          }catch(_){
+            alert("Não foi possível copiar automaticamente. Selecione e copie manualmente.");
+          }
+        });
+
+        renderAdminAll();
+      }
+      if(act==="reset"){
+        const ok = confirm("Redefinir a senha deste aluno? Uma nova senha será gerada.");
+        if(!ok) return;
+        const pass = randomPass();
+        await setAlunoPassword(cpf, pass);
+        openUI("Senha redefinida", `
+          <div class="card pad" style="border-radius:22px">
+            <p class="muted" style="margin:0 0 8px;line-height:1.6">
+              Nova senha gerada para o CPF <strong>${escapeHTML(maskCPF(cpf))}</strong>. Copie agora.
+            </p>
+            <div class="hr"></div>
+            <div class="row">
+              <input class="field" id="genPassOut2" value="${escapeHTML(pass)}" readonly style="flex:1;min-width:240px" />
+              <button class="btn green mini" id="copyPassBtn2">Copiar</button>
+            </div>
+          </div>
+        `);
+        $("#copyPassBtn2").addEventListener("click", async ()=>{
+          try{ await navigator.clipboard.writeText(pass); alert("Senha copiada!"); }
+          catch(_){ alert("Copie manualmente."); }
+        });
+        renderAdminAll();
+      }
+    });
+
+    /******************************************************************
+     *  ADMIN: CHAMADOS + RESPOSTAS
+     ******************************************************************/
+    function renderChamadoToOptions(){
+      const sel = $("#admChamadoTo");
+      const current = sel.value || "ALL";
+      const selected = DB.registrations.filter(r=>r.status==="selected").sort((a,b)=>a.nome.localeCompare(b.nome,"pt-BR"));
+      sel.innerHTML = `<option value="ALL">Todos os selecionados</option>` + selected.map(r=>
+        `<option value="${escapeHTML(r.cpf)}">${escapeHTML(r.nome)} • ${escapeHTML(maskCPF(r.cpf))}</option>`
+      ).join("");
+      sel.value = current;
+    }
+
+    $("#formAdmChamado").addEventListener("submit", (e)=>{
+      e.preventDefault();
+      const to = $("#admChamadoTo").value;
+      const msg = String($("#admChamadoMsg").value||"").trim();
+
+      if(!msg || msg.length < 4){
+        alert("Digite uma mensagem válida.");
+        return;
+      }
+
+      // Validação: se individual, CPF deve existir e ser selecionado
+      if(to !== "ALL"){
+        const reg = selectedRegistrationByCPF(to);
+        if(!reg){
+          alert("Destino inválido: aluno não selecionado.");
+          return;
+        }
+      }else{
+        if(!DB.registrations.some(r=>r.status==="selected")){
+          alert("Não há alunos selecionados para receber mensagem.");
+          return;
+        }
+      }
+
+      DB.calls.push({
+        id: crypto.randomUUID(),
+        toCpf: to,
+        createdAt: nowISO(),
+        message: msg
+      });
+      saveDB(DB);
+
+      alert("Chamado enviado com sucesso!");
+      $("#formAdmChamado").reset();
+      renderAdminChamados();
+      // Se aluno logado, atualiza imediatamente
+      if(SESSION.alunoCpf) renderAlunoChamados();
+    });
+
+    function renderAdminChamados(){
+      const list = $("#admChamadosList");
+      const calls = (DB.calls||[]).slice().sort((a,b)=>new Date(b.createdAt)-new Date(a.createdAt));
+      if(!calls.length){
+        list.innerHTML = `<div class="tiny">Nenhum chamado enviado.</div>`;
+        return;
+      }
+      list.innerHTML = calls.map(c=>{
+        const who = c.toCpf==="ALL" ? "Todos os selecionados" : (DB.registrations.find(r=>r.cpf===c.toCpf)?.nome || maskCPF(c.toCpf));
+        return `
+          <div class="msg">
+            <div class="meta">
+              <span>${escapeHTML(fmtDateTime(c.createdAt))}</span>
+              <span class="badge ${c.toCpf==="ALL" ? "ok":"warn"}">${escapeHTML(who)}</span>
+            </div>
+            <div class="body">${escapeHTML(c.message)}</div>
+          </div>
+        `;
+      }).join("");
+    }
+
+    function renderAdminMsgsAlunos(){
+      const wrap = $("#admMsgsAlunos");
+      const msgs = (DB.studentMsgs||[]).slice().sort((a,b)=>new Date(b.createdAt)-new Date(a.createdAt));
+      if(!msgs.length){
+        wrap.innerHTML = `<div class="tiny">Nenhuma mensagem recebida.</div>`;
+        return;
+      }
+
+      wrap.innerHTML = msgs.map(m=>{
+        const reg = DB.registrations.find(r=>r.cpf===m.fromCpf) || null;
+        const name = reg ? reg.nome : maskCPF(m.fromCpf);
+        const replied = !!(m.adminReply && m.adminReply.trim());
+        return `
+          <div class="msg" data-mid="${escapeHTML(m.id)}">
+            <div class="meta">
+              <span>${escapeHTML(name)} • ${escapeHTML(maskCPF(m.fromCpf))}</span>
+              <span class="badge ${replied ? "ok":"warn"}">${replied ? "Respondido":"Aguardando"}</span>
+            </div>
+            <div class="body">${escapeHTML(m.message)}</div>
+            ${replied ? `
+              <div class="hr" style="margin:10px 0"></div>
+              <div class="tiny">Resposta admin • ${escapeHTML(fmtDateTime(m.repliedAt))}</div>
+              <div class="body">${escapeHTML(m.adminReply)}</div>
+            `:`
+              <div class="hr" style="margin:10px 0"></div>
+              <div class="row">
+                <input class="field" data-reply placeholder="Responder..." maxlength="600" style="flex:1;min-width:220px" />
+                <button class="btn green mini" data-send>Enviar</button>
+              </div>
+            `}
+          </div>
+        `;
+      }).join("");
+    }
+
+    $("#admMsgsAlunos").addEventListener("click", (e)=>{
+      const btn = e.target.closest("button[data-send]");
+      if(!btn) return;
+      const box = e.target.closest(".msg");
+      const id = box?.dataset.mid;
+      if(!id) return;
+
+      const input = box.querySelector("input[data-reply]");
+      const text = String(input?.value||"").trim();
+      if(text.length < 3){
+        alert("Digite uma resposta válida.");
+        return;
+      }
+
+      const m = DB.studentMsgs.find(x=>x.id===id);
+      if(!m) return;
+      m.adminReply = text;
+      m.repliedAt = nowISO();
+      saveDB(DB);
+
+      alert("Resposta enviada!");
+      renderAdminMsgsAlunos();
+      if(SESSION.alunoCpf) renderAlunoMsgs();
+    });
+
+    /******************************************************************
+     *  ADMIN: ETAPAS (CRUD + concluída)
+     ******************************************************************/
+    $("#formEtapa").addEventListener("submit", (e)=>{
+      e.preventDefault();
+      const title = String($("#etTitulo").value||"").trim();
+      const desc  = String($("#etDesc").value||"").trim();
+      const start = $("#etIni").value;
+      const end   = $("#etFim").value;
+
+      if(title.length < 3) return alert("Título inválido.");
+      if(desc.length < 3) return alert("Descrição inválida.");
+      if(!start || !end) return alert("Informe datas de início e fim.");
+      if(new Date(end) < new Date(start)) return alert("A data fim não pode ser anterior à data início.");
+
+      DB.etapas.push({
+        id: crypto.randomUUID(),
+        title, desc, start, end,
+        completed: false
+      });
+      saveDB(DB);
+      $("#formEtapa").reset();
+      renderAdminEtapas();
+      if(SESSION.alunoCpf) renderAlunoEtapas();
+    });
+
+    function renderAdminEtapas(){
+      const list = $("#admEtapasList");
+      const etapas = (DB.etapas||[]).slice().sort((a,b)=>new Date(a.start)-new Date(b.start));
+
+      if(!etapas.length){
+        list.innerHTML = `<div class="tiny">Nenhuma etapa cadastrada.</div>`;
+        return;
+      }
+
+      list.innerHTML = etapas.map(et=>{
+        const done = !!et.completed;
+        return `
+          <div class="msg" data-eid="${escapeHTML(et.id)}">
+            <div class="meta">
+              <span><strong>${escapeHTML(et.title)}</strong> • ${escapeHTML(fmtDate(et.start))} → ${escapeHTML(fmtDate(et.end))}</span>
+              <span class="badge ${done?"ok":"warn"}">${done ? "Concluída ✅" : "Em andamento ⏳"}</span>
+            </div>
+            <div class="body">${escapeHTML(et.desc)}</div>
+            <div class="hr" style="margin:10px 0"></div>
+            <div class="row">
+              <button class="btn ${done?"green":"primary"} mini" data-act="toggle">${done ? "Marcar como NÃO concluída" : "Marcar como concluída"}</button>
+              <button class="btn gray mini" data-act="edit">Editar</button>
+              <button class="btn pink mini" data-act="del">Excluir</button>
+            </div>
+          </div>
+        `;
+      }).join("");
+    }
+
+    $("#admEtapasList").addEventListener("click", (e)=>{
+      const box = e.target.closest(".msg[data-eid]");
+      const act = e.target.closest("button")?.dataset.act;
+      if(!box || !act) return;
+      const id = box.dataset.eid;
+      const et = DB.etapas.find(x=>x.id===id);
+      if(!et) return;
+
+      if(act==="toggle"){
+        et.completed = !et.completed;
+        saveDB(DB);
+        renderAdminEtapas();
+        if(SESSION.alunoCpf) renderAlunoEtapas();
+      }
+      if(act==="del"){
+        const ok = confirm("Excluir esta etapa?");
+        if(!ok) return;
+        DB.etapas = DB.etapas.filter(x=>x.id!==id);
+        saveDB(DB);
+        renderAdminEtapas();
+        if(SESSION.alunoCpf) renderAlunoEtapas();
+      }
+      if(act==="edit"){
+        openUI("Editar etapa", `
+          <div class="card pad" style="border-radius:22px">
+            <form id="editEtForm" autocomplete="off" novalidate>
+              <div class="grid cols2">
+                <div>
+                  <label>Título</label>
+                  <input class="field" id="eTitle" maxlength="80" value="${escapeHTML(et.title)}" required />
+                </div>
+                <div>
+                  <label>Descrição</label>
+                  <input class="field" id="eDesc" maxlength="140" value="${escapeHTML(et.desc)}" required />
+                </div>
+              </div>
+              <div class="grid cols3" style="margin-top:12px">
+                <div>
+                  <label>Início</label>
+                  <input class="field" id="eStart" type="date" value="${escapeHTML(et.start)}" required />
+                </div>
+                <div>
+                  <label>Fim</label>
+                  <input class="field" id="eEnd" type="date" value="${escapeHTML(et.end)}" required />
+                </div>
+                <div style="display:flex;align-items:flex-end">
+                  <button class="btn primary mini" type="submit" style="width:100%">Salvar</button>
+                </div>
+              </div>
+            </form>
+          </div>
+        `);
+
+        $("#editEtForm").addEventListener("submit", (ev)=>{
+          ev.preventDefault();
+          const t = String($("#eTitle").value||"").trim();
+          const d = String($("#eDesc").value||"").trim();
+          const s = $("#eStart").value;
+          const f = $("#eEnd").value;
+          if(t.length<3) return alert("Título inválido.");
+          if(d.length<3) return alert("Descrição inválida.");
+          if(!s||!f) return alert("Datas obrigatórias.");
+          if(new Date(f) < new Date(s)) return alert("Fim não pode ser anterior ao início.");
+          et.title=t; et.desc=d; et.start=s; et.end=f;
+          saveDB(DB);
+          closeUI();
+          renderAdminEtapas();
+          if(SESSION.alunoCpf) renderAlunoEtapas();
+        });
+      }
+    });
+
+    /******************************************************************
+     *  ADMIN: LINKS SOCIAIS
+     ******************************************************************/
+    $("#formLinks").addEventListener("submit", (e)=>{
+      e.preventDefault();
+      DB.settings.social.youtube = String($("#lkYt").value||"").trim();
+      DB.settings.social.whatsapp = String($("#lkWa").value||"").trim();
+      DB.settings.social.instagram = String($("#lkIg").value||"").trim();
+      saveDB(DB);
+      alert("Links salvos!");
+      renderMenuButtons();
+    });
+
+    /******************************************************************
+     *  ADMIN: CONFIG (período + identidade + botões extras)
+     ******************************************************************/
+    $("#formPeriodo").addEventListener("submit", (e)=>{
+      e.preventDefault();
+      const start = $("#cfgIni").value;
+      const end = $("#cfgFim").value;
+      if(!start || !end) return alert("Informe início e fim.");
+      if(new Date(end) < new Date(start)) return alert("Data fim não pode ser anterior.");
+      DB.settings.regPeriod = { start, end };
+      saveDB(DB);
+      alert("Período de inscrições atualizado!");
+      refreshRegBadge();
+      renderMenuButtons();
+      refreshInscricaoButtonState();
+    });
+
+    function isHexColor(s){
+      return /^#[0-9a-fA-F]{6}$/.test(String(s||"").trim());
+    }
+    async function fileToDataURL(file){
+      return new Promise((resolve, reject)=>{
+        const r = new FileReader();
+        r.onload = ()=>resolve(String(r.result||""));
+        r.onerror = reject;
+        r.readAsDataURL(file);
+      });
+    }
+
+    $("#formBrand").addEventListener("submit", async (e)=>{
+      e.preventDefault();
+      const t = String($("#cfgTitle").value||"").trim();
+      const s = String($("#cfgSubtitle").value||"").trim();
+      const A = String($("#cfgA").value||"").trim() || DB.settings.colors.A;
+      const B = String($("#cfgB").value||"").trim() || DB.settings.colors.B;
+      const C = String($("#cfgC").value||"").trim() || DB.settings.colors.C;
+
+      if(t.length<8) return alert("Título muito curto.");
+      if(s.length<10) return alert("Subtítulo muito curto.");
+      if(!isHexColor(A) || !isHexColor(B) || !isHexColor(C)) return alert("Cores inválidas. Use formato #RRGGBB.");
+
+      DB.settings.homeTitle = t;
+      DB.settings.homeSubtitle = s;
+      DB.settings.colors = { A, B, C };
+
+      const file = $("#cfgLogo").files?.[0];
+      if(file){
+        const url = await fileToDataURL(file);
+        DB.settings.logoDataUrl = url;
+      }
+
+      saveDB(DB);
+      alert("Identidade atualizada!");
+      applyBrand();
+      renderMenuButtons();
+    });
+
+    $("#formCustomBtn").addEventListener("submit", (e)=>{
+      e.preventDefault();
+      const label = String($("#cbLabel").value||"").trim();
+      const url = String($("#cbUrl").value||"").trim();
+
+      if(label.length < 3) return alert("Texto do botão inválido.");
+      if(!/^https?:\/\/.+/i.test(url)) return alert("URL inválida. Use http:// ou https://");
+
+      DB.settings.customMenuButtons.push({
+        id: crypto.randomUUID(),
+        label,
+        url
+      });
+      saveDB(DB);
+
+      alert("Botão extra adicionado!");
+      $("#formCustomBtn").reset();
+      renderCustomButtonsList();
+      renderMenuButtons();
+    });
+
+    function renderCustomButtonsList(){
+      const wrap = $("#customBtnsList");
+      const items = DB.settings.customMenuButtons || [];
+      if(!items.length){
+        wrap.innerHTML = `<div class="tiny">Nenhum botão extra criado.</div>`;
+        return;
+      }
+      wrap.innerHTML = items.map(b=>`
+        <div class="msg" data-cbid="${escapeHTML(b.id)}">
+          <div class="meta">
+            <span><strong>${escapeHTML(b.label)}</strong></span>
+            <span class="badge">Externo</span>
+          </div>
+          <div class="body" style="color:rgba(255,255,255,.78)">${escapeHTML(b.url)}</div>
+          <div class="hr" style="margin:10px 0"></div>
+          <div class="row">
+            <button class="btn gray mini" data-act="open">Abrir</button>
+            <button class="btn pink mini" data-act="del">Remover</button>
+          </div>
+        </div>
+      `).join("");
+    }
+
+    $("#customBtnsList").addEventListener("click", (e)=>{
+      const box = e.target.closest(".msg[data-cbid]");
+      const act = e.target.closest("button")?.dataset.act;
+      if(!box || !act) return;
+      const id = box.dataset.cbid;
+      const btn = (DB.settings.customMenuButtons||[]).find(x=>x.id===id);
+      if(!btn) return;
+
+      if(act==="open") openExternal(btn.url);
+      if(act==="del"){
+        const ok = confirm("Remover este botão extra do menu?");
+        if(!ok) return;
+        DB.settings.customMenuButtons = DB.settings.customMenuButtons.filter(x=>x.id!==id);
+        saveDB(DB);
+        renderCustomButtonsList();
+        renderMenuButtons();
+      }
+    });
+
+    /******************************************************************
+     *  ADMIN: BACKUP / RESET
+     ******************************************************************/
+    $("#btnExportJson").addEventListener("click", ()=>{
+      const blob = new Blob([JSON.stringify(DB, null, 2)], { type:"application/json" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = "EDA_CEMO_2026_backup.json";
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(url);
+    });
+
+    $("#btnResetDemo").addEventListener("click", ()=>{
+      const ok = confirm("ATENÇÃO: isso apagará todos os dados (inscrições, acessos, mensagens). Continuar?");
+      if(!ok) return;
+      DB = defaultDB();
+      saveDB(DB);
+      alert("Sistema resetado.");
+      applyBrand();
+      renderAdminAll();
+      refreshRegBadge();
+      refreshInscricaoButtonState();
+    });
+
+    /******************************************************************
+     *  RENDER ADMIN (tudo)
+     ******************************************************************/
+    function renderAdminAll(){
+      renderAdminInscricoes($("#admSearch").value || "");
+      renderAdminAcessos();
+      renderChamadoToOptions();
+      renderAdminChamados();
+      renderAdminMsgsAlunos();
+      renderAdminEtapas();
+      renderCustomButtonsList();
+
+      // Preenche forms (links + config)
+      $("#lkYt").value = DB.settings.social.youtube || "";
+      $("#lkWa").value = DB.settings.social.whatsapp || "";
+      $("#lkIg").value = DB.settings.social.instagram || "";
+
+      $("#cfgIni").value = DB.settings.regPeriod?.start || "";
+      $("#cfgFim").value = DB.settings.regPeriod?.end || "";
+
+      $("#cfgTitle").value = DB.settings.homeTitle || "";
+      $("#cfgSubtitle").value = DB.settings.homeSubtitle || "";
+      $("#cfgA").value = DB.settings.colors?.A || "#6c5ce7";
+      $("#cfgB").value = DB.settings.colors?.B || "#00d2ff";
+      $("#cfgC").value = DB.settings.colors?.C || "#ff4fd8";
+    }
+
+    /******************************************************************
+     *  IDENTIDADE / HOME (aplicar settings)
+     ******************************************************************/
+    function applyBrand(){
+      // Título e subtítulo (home)
+      $("#homeTitle").innerHTML = escapeHTML(DB.settings.homeTitle||"")
+        .replaceAll("\n","<br/>");
+      $("#homeSubtitle").innerHTML = escapeHTML(DB.settings.homeSubtitle||"");
+
+      // Cores
+      const {A,B,C} = DB.settings.colors || {};
+      if(A) document.documentElement.style.setProperty("--accentA", A);
+      if(B) document.documentElement.style.setProperty("--accentB", B);
+      if(C) document.documentElement.style.setProperty("--accentC", C);
+
+      // Logo
+      const img = $("#brandLogoImg");
+      const fallback = $("#brandLogoFallback");
+      const dataUrl = DB.settings.logoDataUrl || "";
+      if(dataUrl){
+        img.src = dataUrl;
+        img.style.display = "block";
+        fallback.style.display = "none";
+      }else{
+        img.removeAttribute("src");
+        img.style.display = "none";
+        fallback.style.display = "block";
+      }
+
+      refreshRegBadge();
+      renderMenuButtons();
+      refreshInscricaoButtonState();
+    }
+
+    function refreshRegBadge(){
+      const st = regOpenStatus();
+      const badge = $("#regStatusBadge");
+      const dot = $("#regStatusDot");
+      const txt = $("#regStatusText");
+      txt.textContent = st.ok ? st.reason : st.reason;
+      if(st.ok){
+        badge.classList.remove("warn","bad");
+        badge.classList.add("ok");
+        dot.textContent = "🟢";
+      }else{
+        badge.classList.remove("ok");
+        // classificar
+        if(st.reason.includes("encerradas")){
+          badge.classList.add("bad");
+          dot.textContent = "🔴";
+        }else{
+          badge.classList.add("warn");
+          dot.textContent = "🟠";
+        }
+      }
+    }
+
+    function refreshInscricaoButtonState(){
+      const st = regOpenStatus();
+      const btn = $("#btnEnviarInscricao");
+      btn.disabled = !st.ok;
+      $("#inscricaoHint").textContent = st.ok
+        ? `Período ativo: ${fmtDate(DB.settings.regPeriod.start)} → ${fmtDate(DB.settings.regPeriod.end)}`
+        : `Inscrições indisponíveis: ${st.reason}. (Configure em Área Administrativa → Configurações)`;
+    }
+
+    /******************************************************************
+     *  BOOT: sessão + redirecionamento adequado
+     ******************************************************************/
+    function boot(){
+      // Data no badge
+      $("#todayText").textContent = fmtDate(new Date());
+      $("#yearNow").textContent = String(new Date().getFullYear());
+
+      applyBrand();
+
+      // Seções conforme sessão
+      if(SESSION.admin){
+        showSection("adminPanel");
+        renderAdminAll();
+      }else if(SESSION.alunoCpf){
+        // valida se ainda existe e está selecionado
+        const ok = !!selectedRegistrationByCPF(SESSION.alunoCpf) && !!DB.credentials[SESSION.alunoCpf];
+        if(ok){
+          showSection("estudantePortal");
+          renderAlunoPortal();
+        }else{
+          SESSION.alunoCpf = null;
+          saveSession(SESSION);
+          showSection("home");
+        }
+      }else{
+        showSection("home");
+      }
+    }
+
+    /******************************************************************
+     *  STARS CANVAS (animação suave)
+     ******************************************************************/
+    function initStars(){
+      const canvas = $("#stars");
+      const ctx = canvas.getContext("2d");
+      let W=0,H=0, DPR=1;
+      let stars = [];
+
+      function resize(){
+        DPR = window.devicePixelRatio || 1;
+        W = Math.floor(window.innerWidth);
+        H = Math.floor(window.innerHeight);
+        canvas.width = Math.floor(W*DPR);
+        canvas.height = Math.floor(H*DPR);
+        canvas.style.width = W+"px";
+        canvas.style.height = H+"px";
+        ctx.setTransform(DPR,0,0,DPR,0,0);
+        const count = Math.floor((W*H)/14000);
+        stars = new Array(clamp(count, 80, 220)).fill(0).map(()=>({
+          x: Math.random()*W,
+          y: Math.random()*H,
+          r: Math.random()*1.6 + 0.2,
+          a: Math.random()*0.7 + 0.15,
+          vx: (Math.random()*0.12 + 0.02),
+          vy: (Math.random()*0.10 + 0.02),
+          tw: Math.random()*0.015 + 0.004
+        }));
+      }
+
+      function draw(){
+        ctx.clearRect(0,0,W,H);
+
+        // leve gradiente para profundidade
+        const g = ctx.createRadialGradient(W*0.18, H*0.2, 0, W*0.18, H*0.2, Math.max(W,H));
+        g.addColorStop(0, "rgba(0,210,255,0.06)");
+        g.addColorStop(1, "rgba(0,0,0,0)");
+        ctx.fillStyle = g;
+        ctx.fillRect(0,0,W,H);
+
+        for(const s of stars){
+          s.x += s.vx;
+          s.y += s.vy;
+          if(s.x > W+10) s.x = -10;
+          if(s.y > H+10) s.y = -10;
+
+          s.a += (Math.random()-.5)*s.tw;
+          s.a = clamp(s.a, 0.08, 0.95);
+
+          ctx.beginPath();
+          ctx.fillStyle = `rgba(255,255,255,${s.a})`;
+          ctx.arc(s.x, s.y, s.r, 0, Math.PI*2);
+          ctx.fill();
+        }
+
+        requestAnimationFrame(draw);
+      }
+
+      window.addEventListener("resize", resize);
+      resize();
+      draw();
+    }
+
+    /******************************************************************
+     *  AÇÕES DE ENTRADA (menu social + botões voltar etc.)
+     ******************************************************************/
+    // Clique no logo volta para home (UX)
+    $("#brandLogo").addEventListener("click", ()=>showSection("home"));
+
+    /******************************************************************
+     *  BOOTSTRAP
+     ******************************************************************/
+    initStars();
+    boot();
+  </script>
+</body>
+</html>

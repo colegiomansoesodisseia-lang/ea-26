@@ -1565,37 +1565,7 @@
     /******************************************************************
      *  UTILITÁRIOS BÁSICOS
      ******************************************************************/
-    const $ = (sel, root=document) => root.querySelector(sel);
-    const $$ = (sel, root=document) => [...root.querySelectorAll(sel)];
-    const nowISO = () => new Date().toISOString();
-    const onlyDigits = (s) => (s||"").replace(/\D+/g, "");
-    const clamp = (n,min,max)=>Math.max(min, Math.min(max, n));
-    const pad2 = (n)=>String(n).padStart(2,"0");
-
-    function fmtDateTime(iso){
-      const d = new Date(iso);
-      const dd = pad2(d.getDate());
-      const mm = pad2(d.getMonth()+1);
-      const yy = d.getFullYear();
-      const hh = pad2(d.getHours());
-      const mi = pad2(d.getMinutes());
-      return `${dd}/${mm}/${yy} ${hh}:${mi}`;
-    }
-    function fmtDate(isoOrDate){
-      const d = isoOrDate instanceof Date ? isoOrDate : new Date(isoOrDate);
-      const dd = pad2(d.getDate());
-      const mm = pad2(d.getMonth()+1);
-      const yy = d.getFullYear();
-      return `${dd}/${mm}/${yy}`;
-    }
-
-    function escapeHTML(str){
-      return String(str||"")
-        .replaceAll("&","&amp;")
-        .replaceAll("<","&lt;")
-        .replaceAll(">","&gt;")
-        .replaceAll('"',"&quot;")
-        .replaceAll("'","&#039;");
+    // Import the functions you need from the SDKs you need import { initializeApp } from "firebase/app"; // TODO: Add SDKs for Firebase products that you want to use // https://firebase.google.com/docs/web/setup#available-libraries // Your web app's Firebase configuration const firebaseConfig = { apiKey: "AIzaSyA5yuyZENHro6UAt73Vw9SN61vsEFjk164", authDomain: "estudantes-de-atitude-cemo.firebaseapp.com", projectId: "estudantes-de-atitude-cemo", storageBucket: "estudantes-de-atitude-cemo.firebasestorage.app", messagingSenderId: "303693376788", appId: "1:303693376788:web:a80f052dfe2cfbd1332601" }; // Initialize Firebase const app = initializeApp(firebaseConfig);
     }
 
     /******************************************************************
@@ -3254,4 +3224,3 @@
   </script>
 </body>
 </html>
-
